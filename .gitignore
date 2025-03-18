@@ -1,3 +1,7 @@
 # Ignore uploads directory content
 uploads/*
 !uploads/.gitkeep
+
+# Ignore public directory content
+public/*
+!public/.gitkeep
