@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepPaper - 分析结果</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container analysis-container">
+        <header>
+            <h1>DeepPaper</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('index') }}" class="back-link">返回首页</a>
+                <a href="{{ url_for('view_pdf', filename=filename) }}" class="back-link">返回PDF查看</a>
+                <a href="{{ url_for('settings') }}" class="settings-link">设置</a>
+            </div>
+        </header>
+        
+        <main>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for message in messages %}
+                            <div class="message">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <div class="analysis-header">
+                <h2>分析结果</h2>
+                <div class="analysis-meta">
+                    <p>文件名: {{ original_filename }}</p>
+                    <p>分析模型: {{ settings.model }}</p>
+                    <p>分析语言: {{ '中文' if settings.language == 'zh' else '英文' }}</p>
+                    <p>详细程度: {{ {'basic': '基础', 'standard': '标准', 'detailed': '详细'}[settings.detail_level] }}</p>
+                </div>
+            </div>
+            
+            <div class="analysis-content">
+                {% if analysis_sections %}
+                    <div class="analysis-steps">
+                        <div class="steps-header">
+                            <div class="step-indicator {% if extracted_content %}active{% endif %}">1</div>
+                            <div class="step-line"></div>
+                            <div class="step-indicator {% if content_blocks %}active{% endif %}">2</div>
+                            <div class="step-line"></div>
+                            <div class="step-indicator {% if analysis_sections %}active{% endif %}">3</div>
+                        </div>
+                        <div class="steps-labels">
+                            <div class="step-label">提取PDF内容</div>
+                            <div class="step-label">内容分块</div>
+                            <div class="step-label">内容分析</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 步骤1：提取PDF内容 -->
+                    <div class="analysis-step-content" id="step1-content">
+                        <h3 class="section-title">步骤1：提取PDF内容</h3>
+                        {% if extracted_content %}
+                            <div class="section-content">
+                                <div class="extracted-content">
+                                    <p>{{ extracted_content }}</p>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="section-content">
+                                <p class="no-content">暂无提取内容</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 步骤2：内容分块 -->
+                    <div class="analysis-step-content" id="step2-content">
+                        <h3 class="section-title">步骤2：内容分块</h3>
+                        {% if content_blocks %}
+                            <div class="section-content">
+                                <div class="content-blocks">
+                                    {% for block in content_blocks %}
+                                        <div class="content-block">
+                                            <div class="block-header">
+                                                <span class="block-title">块 {{ loop.index }}</span>
+                                            </div>
+                                            <div class="block-content">
+                                                <p>{{ block }}</p>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="section-content">
+                                <p class="no-content">暂无分块内容</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 步骤3：内容分析 -->
+                    <div class="analysis-step-content" id="step3-content">
+                        <h3 class="section-title">步骤3：内容分析</h3>
+                        {% if analysis_sections %}
+                            {% for section in analysis_sections %}
+                                <div class="analysis-section">
+                                    <h4 class="section-subtitle">{{ section.title }}</h4>
+                                    <div class="section-content">
+                                        {{ section.content | safe }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="section-content">
+                                <p class="no-content">暂无分析结果</p>
+                            </div>
+                        {% endif %}
+                    </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2023 DeepPaper - 智能论文分析工具</p>
+        </footer>
+    </div>
+</body>
+</html>

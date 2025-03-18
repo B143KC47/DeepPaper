@@ -32,10 +32,8 @@
                     <div class="form-group">
                         <label for="model">选择分析模型:</label>
                         <select name="model" id="model" class="model-select">
-                            <option value="gpt-3.5-turbo" {% if current_settings.model == 'gpt-3.5-turbo' %}selected{% endif %}>GPT-3.5 Turbo</option>
-                            <option value="gpt-4" {% if current_settings.model == 'gpt-4' %}selected{% endif %}>GPT-4</option>
-                            <option value="deepseek-coder" {% if current_settings.model == 'deepseek-coder' %}selected{% endif %}>DeepSeek Coder</option>
-                            <option value="claude-3" {% if current_settings.model == 'claude-3' %}selected{% endif %}>Claude 3</option>
+                            <option value="deepseek-chat" {% if current_settings.model == 'deepseek-chat' %}selected{% endif %}>DeepSeek Chat</option>
+                            <option value="deepseek-reasoner" {% if current_settings.model == 'deepseek-reasoner' %}selected{% endif %}>DeepSeek Reasoner</option>
                         </select>
                     </div>
                     
