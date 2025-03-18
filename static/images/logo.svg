@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景圆形 -->
+  <circle cx="100" cy="100" r="90" fill="#4A90E2" opacity="0.1"/>
+  
+  <!-- 纸张图标 -->
+  <path d="M60 40 h80 l20 20 v100 h-100 v-120 z" fill="white" stroke="#4A90E2" stroke-width="3"/>
+  <path d="M140 40 v20 h20" fill="none" stroke="#4A90E2" stroke-width="3"/>
+  
+  <!-- 文本线条装饰 -->
+  <line x1="75" y1="70" x2="125" y2="70" stroke="#4A90E2" stroke-width="3"/>
+  <line x1="75" y1="90" x2="115" y2="90" stroke="#4A90E2" stroke-width="3"/>
+  <line x1="75" y1="110" x2="120" y2="110" stroke="#4A90E2" stroke-width="3"/>
+  
+  <!-- AI分析图形 -->
+  <circle cx="100" cy="140" r="15" fill="none" stroke="#4A90E2" stroke-width="3"/>
+  <path d="M85 140 l30 -30 m0 30 l-30 -30" stroke="#4A90E2" stroke-width="3" fill="none"/>
+</svg>
