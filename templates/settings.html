@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepPaper - 设置</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container settings-container">
+        <header>
+            <h1>DeepPaper</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('index') }}" class="back-link">返回首页</a>
+            </div>
+        </header>
+        
+        <main>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for message in messages %}
+                            <div class="message">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <div class="settings-panel">
+                <h2>分析设置</h2>
+                <form action="{{ url_for('save_settings') }}" method="post" class="settings-form">
+                    <div class="form-group">
+                        <label for="model">选择分析模型:</label>
+                        <select name="model" id="model" class="model-select">
+                            <option value="gpt-3.5-turbo" {% if current_settings.model == 'gpt-3.5-turbo' %}selected{% endif %}>GPT-3.5 Turbo</option>
+                            <option value="gpt-4" {% if current_settings.model == 'gpt-4' %}selected{% endif %}>GPT-4</option>
+                            <option value="deepseek-coder" {% if current_settings.model == 'deepseek-coder' %}selected{% endif %}>DeepSeek Coder</option>
+                            <option value="claude-3" {% if current_settings.model == 'claude-3' %}selected{% endif %}>Claude 3</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="language">分析语言:</label>
+                        <select name="language" id="language" class="language-select">
+                            <option value="zh" {% if current_settings.language == 'zh' %}selected{% endif %}>中文</option>
+                            <option value="en" {% if current_settings.language == 'en' %}selected{% endif %}>英文</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="detail_level">分析详细程度:</label>
+                        <select name="detail_level" id="detail_level" class="detail-level-select">
+                            <option value="basic" {% if current_settings.detail_level == 'basic' %}selected{% endif %}>基础</option>
+                            <option value="standard" {% if current_settings.detail_level == 'standard' %}selected{% endif %}>标准</option>
+                            <option value="detailed" {% if current_settings.detail_level == 'detailed' %}selected{% endif %}>详细</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="save-button">保存设置</button>
+                </form>
+            </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2023 DeepPaper - 智能论文分析工具</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepPaper - PDF查看器</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container viewer-container">
+        <header>
+            <h1>DeepPaper</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('index') }}" class="back-link">返回首页</a>
+            </div>
+        </header>
+        
+        <main>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for message in messages %}
+                            <div class="message">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <div class="pdf-container">
+                <div class="pdf-actions">
+                    <form action="{{ url_for('deep_paper', filename=filename) }}" method="post">
+                        <button type="submit" class="deep-paper-button">使用DeepPaper分析</button>
+                    </form>
+                </div>
+                
+                <div class="pdf-viewer">
+                    <embed src="{{ url_for('uploaded_file', filename=filename) }}" type="application/pdf" width="100%" height="600px" />
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2023 DeepPaper - 智能论文分析工具</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepPaper - PDF智能分析工具</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>DeepPaper</h1>
+            <p class="subtitle">PDF智能分析工具</p>
+        </header>
+        
+        <main>
+            <div class="upload-container">
+                <h2>上传PDF文件</h2>
+                
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="flash-messages">
+                            {% for message in messages %}
+                                <div class="message">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                
+                <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data" class="upload-form">
+                    <div class="file-input-container">
+                        <input type="file" name="file" id="file" accept=".pdf" class="file-input">
+                        <label for="file" class="file-label">
+                            <span class="file-icon">📄</span>
+                            <span class="file-text">选择PDF文件</span>
+                        </label>
+                        <span class="selected-file-name" id="selected-file-name">未选择文件</span>
+                    </div>
+                    <button type="submit" class="upload-button">上传文件</button>
+                </form>
+            </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2023 DeepPaper - 智能论文分析工具</p>
+        </footer>
+    </div>
+    
+    <script>
+        // 显示选择的文件名
+        document.getElementById('file').addEventListener('change', function() {
+            const fileName = this.files[0] ? this.files[0].name : '未选择文件';
+            document.getElementById('selected-file-name').textContent = fileName;
+        });
+    </script>
+</body>
+</html>
