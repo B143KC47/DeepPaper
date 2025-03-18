@@ -72,7 +72,7 @@ def upload_file():
 
 @app.route('/view/<filename>')
 def view_pdf(filename):
-    return render_template('viewer.html', filename=filename)
+    return render_template('viewer/viewer.html', filename=filename)
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
