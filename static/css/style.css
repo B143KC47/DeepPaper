@@ -6,19 +6,37 @@
 }
 
 :root {
+    /* 主题颜色 */
     --primary-dark: #0a0a0a;
     --secondary-dark: #121212;
     --accent-dark: #1e1e1e;
     --text-light: #f8f9fa;
     --text-dark: #212529;
+    
+    /* 暖色系 */
     --warm-light: #f9f7f7;
     --warm-accent: #ffd8be;
     --warm-gradient: linear-gradient(135deg, #ffb88c, #de6262);
+    --warm-shadow: rgba(222, 98, 98, 0.3);
+    --warm-glow: rgba(255, 216, 190, 0.2);
+    
+    /* 玻璃拟态效果 */
     --glass-bg: rgba(15, 15, 15, 0.7);
     --glass-border: rgba(255, 255, 255, 0.1);
     --glass-shadow: rgba(0, 0, 0, 0.3);
     --glass-glow: 0 0 15px rgba(255, 216, 190, 0.1);
+    
+    /* 动画和过渡 */
     --transition-speed: 0.3s;
+    --hover-transform: translateY(-3px);
+    
+    /* 组件样式 */
+    --border-radius-sm: 8px;
+    --border-radius-md: 12px;
+    --border-radius-lg: 16px;
+    --spacing-sm: 10px;
+    --spacing-md: 15px;
+    --spacing-lg: 20px;
 }
 
 body {
@@ -55,7 +73,7 @@ body::before {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--glass-border);
-    border-radius: 16px;
+    border-radius: var(--border-radius-lg);
     box-shadow: 0 4px 30px var(--glass-shadow), var(--glass-glow);
     transition: all var(--transition-speed) ease;
     position: relative;
@@ -203,16 +221,16 @@ main::before {
 }
 
 .upload-button {
-    padding: 12px 30px;
+    padding: var(--spacing-md) 30px;
     background: var(--warm-gradient);
     color: var(--text-dark);
     border: none;
-    border-radius: 12px;
+    border-radius: var(--border-radius-md);
     cursor: pointer;
     font-size: 1rem;
     font-weight: 500;
     transition: all var(--transition-speed);
-    box-shadow: 0 4px 15px rgba(222, 98, 98, 0.3), 0 0 5px rgba(255, 216, 190, 0.2);
+    box-shadow: 0 4px 15px var(--warm-shadow), 0 0 5px var(--warm-glow);
     position: relative;
     overflow: hidden;
     z-index: 1;
@@ -318,16 +336,16 @@ footer {
 }
 
 .save-button {
-    padding: 12px 30px;
+    padding: var(--spacing-md) 30px;
     background: var(--warm-gradient);
     color: var(--text-dark);
     border: none;
-    border-radius: 12px;
+    border-radius: var(--border-radius-md);
     cursor: pointer;
     font-size: 1rem;
     font-weight: 500;
     transition: all var(--transition-speed);
-    box-shadow: 0 4px 15px rgba(222, 98, 98, 0.3);
+    box-shadow: 0 4px 15px var(--warm-shadow);
 }
 
 .save-button:hover {
@@ -387,16 +405,16 @@ footer {
 }
 
 .deep-paper-button {
-    padding: 12px 30px;
-    background: linear-gradient(135deg, #9b59b6, #8e44ad);
-    color: var(--text-light);
+    padding: var(--spacing-md) 30px;
+    background: var(--warm-gradient);
+    color: var(--text-dark);
     border: none;
-    border-radius: 12px;
+    border-radius: var(--border-radius-md);
     cursor: pointer;
     font-size: 1rem;
     font-weight: 500;
     transition: all var(--transition-speed);
-    box-shadow: 0 4px 15px rgba(142, 68, 173, 0.3);
+    box-shadow: 0 4px 15px var(--warm-shadow);
 }
 
 .deep-paper-button:hover {
@@ -408,10 +426,65 @@ footer {
     border: 1px solid var(--glass-border);
     border-radius: 12px;
     overflow: hidden;
-    height: 600px;
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
+    display: flex;
+    flex-direction: column;
+}
+
+.pdf-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background: rgba(20, 20, 20, 0.8);
+    border-bottom: 1px solid var(--glass-border);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.pdf-control-btn {
+    padding: 6px 12px;
+    background: rgba(40, 40, 40, 0.8);
+    color: var(--warm-light);
+    border: 1px solid var(--glass-border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all var(--transition-speed);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.pdf-control-btn:hover {
+    background: rgba(60, 60, 60, 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3), 0 0 3px rgba(255, 216, 190, 0.1);
+}
+
+#page-info {
+    color: var(--warm-light);
+    font-size: 0.9rem;
+}
+
+.zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#zoom-level {
+    color: var(--warm-accent);
+    font-size: 0.9rem;
+    min-width: 50px;
+    text-align: center;
+}
+
+#pdf-embed {
+    flex: 1;
+    height: 550px;
 }
 
 /* 分析结果页面样式 */
@@ -539,8 +612,8 @@ footer {
 }
 
 .content-block {
-    background: rgba(40, 40, 40, 0.5);
-    border-radius: 8px;
+    background: var(--glass-bg);
+    border-radius: var(--border-radius-sm);
     border: 1px solid var(--glass-border);
     overflow: hidden;
 }

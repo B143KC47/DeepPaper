@@ -50,13 +50,13 @@ def index():
 def upload_file():
     if 'file' not in request.files:
         flash('没有选择文件')
-        return redirect(request.url)
+        return redirect(url_for('index'))
     
     file = request.files['file']
     
     if file.filename == '':
         flash('没有选择文件')
-        return redirect(request.url)
+        return redirect(url_for('index'))
     
     if file and allowed_file(file.filename):
         # 使用UUID生成唯一文件名，避免文件名冲突

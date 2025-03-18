@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepPaper - 分析结果</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script>
+        // 设置PDF.js worker路径
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    </script>
+    <!-- 添加Markdown渲染库 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* 分析页面的特殊样式 */
+        .split-container {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 200px);
+            min-height: 500px;
+        }
+        
+        .pdf-preview-panel {
+            flex: 1;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(30, 30, 30, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .analysis-panel {
+            flex: 1;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(30, 30, 30, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel-header {
+            padding: 10px 15px;
+            background: rgba(20, 20, 20, 0.8);
+            border-bottom: 1px solid var(--glass-border);
+            font-weight: 500;
+            color: var(--warm-accent);
+        }
+        
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        .pdf-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background: rgba(20, 20, 20, 0.8);
+            border-bottom: 1px solid var(--glass-border);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        #pdf-canvas {
+            margin: 0 auto;
+            display: block;
+        }
+        
+        .analysis-tabs {
+            display: flex;
+            background: rgba(20, 20, 20, 0.8);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            color: var(--warm-light);
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active {
+            color: var(--warm-accent);
+            border-bottom-color: var(--warm-accent);
+            background: rgba(40, 40, 40, 0.5);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 15px;
+            height: 100%;
+            overflow-y: auto;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .loading-animation {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 216, 190, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--warm-accent);
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            color: var(--warm-light);
+            text-align: center;
+        }
+        
+        .markdown-content {
+            color: var(--warm-light);
+            line-height: 1.8;
+        }
+        
+        .markdown-content h1, 
+        .markdown-content h2, 
+        .markdown-content h3, 
+        .markdown-content h4, 
+        .markdown-content h5, 
+        .markdown-content h6 {
+            color: var(--warm-accent);
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+        
+        .markdown-content p {
+            margin-bottom: 1em;
+        }
+        
+        .markdown-content ul, 
+        .markdown-content ol {
+            margin-left: 2em;
+            margin-bottom: 1em;
+        }
+        
+        .markdown-content li {
+            margin-bottom: 0.5em;
+        }
+        
+        .markdown-content blockquote {
+            border-left: 3px solid var(--warm-accent);
+            padding-left: 1em;
+            margin-left: 0;
+            margin-right: 0;
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .markdown-content code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        
+        .markdown-content pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1em;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin-bottom: 1em;
+        }
+        
+        .markdown-content pre code {
+            background: transparent;
+            padding: 0;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .split-container {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .pdf-preview-panel,
+            .analysis-panel {
+                height: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container analysis-container">
+        <header>
+            <h1>DeepPaper</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('index') }}" class="back-link">返回首页</a>
+                <a href="{{ url_for('view_pdf', filename=filename) }}" class="back-link">返回PDF查看</a>
+                <a href="{{ url_for('settings') }}" class="settings-link">设置</a>
+            </div>
+        </header>
+        
+        <main>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for message in messages %}
+                            <div class="message">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <div class="analysis-header">
+                <h2>分析结果</h2>
+                <div class="analysis-meta">
+                    <p>文件名: {{ original_filename }}</p>
+                    <p>分析模型: {{ settings.model }}</p>
+                    <p>分析语言: {{ '中文' if settings.language == 'zh' else '英文' }}</p>
+                    <p>详细程度: {{ {'basic': '基础', 'standard': '标准', 'detailed': '详细'}[settings.detail_level] }}</p>
+                    <p>分析时间: {{ analysis_time }}</p>
+                </div>
+            </div>
+            
+            <div class="split-container">
+                <!-- 左侧PDF预览面板 -->
+                <div class="pdf-preview-panel">
+                    <div class="panel-header">PDF预览</div>
+                    <div class="pdf-controls">
+                        <button id="prev-page" class="pdf-control-btn"><span>◀</span> 上一页</button>
+                        <span id="page-info">第 <span id="page-num">1</span> 页 / 共 <span id="page-count">0</span> 页</span>
+                        <button id="next-page" class="pdf-control-btn">下一页 <span>▶</span></button>
+                        <div class="zoom-controls">
+                            <button id="zoom-out" class="pdf-control-btn">缩小</button>
+                            <span id="zoom-level">100%</span>
+                            <button id="zoom-in" class="pdf-control-btn">放大</button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <canvas id="pdf-canvas"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 右侧分析面板 -->
+                <div class="analysis-panel">
+                    <div class="analysis-tabs">
+                        <div class="tab active" data-tab="process">分析过程</div>
+                        <div class="tab" data-tab="result">分析结果</div>
+                        <div class="tab" data-tab="markdown">Markdown</div>
+                    </div>
+                    
+                    <!-- 分析过程标签页 -->
+                    <div class="tab-content active" id="process-tab">
+                        <div class="analysis-steps">
+                            <div class="steps-header">
+                                <div class="step-indicator {% if extracted_content %}active{% endif %}">1</div>
+                                <div class="step-line"></div>
+                                <div class="step-indicator {% if content_blocks %}active{% endif %}">2</div>
+                                <div class="step-line"></div>
+                                <div class="step-indicator {% if analysis_sections %}active{% endif %}">3</div>
+                            </div>
+                            <div class="steps-labels">
+                                <div class="step-label">提取PDF内容</div>
+                                <div class="step-label">内容分块</div>
+                                <div class="step-label">内容分析</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 步骤1：提取PDF内容 -->
+                        <div class="analysis-step-content" id="step1-content">
+                            <h3 class="section-title">步骤1：提取PDF内容</h3>
+                            {% if extracted_content %}
+                                <div class="section-content">
+                                    <div class="extracted-content">
+                                        <p>{{ extracted_content }}</p>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="section-content">
+                                    <p class="no-content">暂无提取内容</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- 步骤2：内容分块 -->
+                        <div class="analysis-step-content" id="step2-content">
+                            <h3 class="section-title">步骤2：内容分块</h3>
+                            {% if content_blocks %}
+                                <div class="section-content">
+                                    <div class="content-blocks">
+                                        {% for block in content_blocks %}
+                                            <div class="content-block">
+                                                <div class="block-header">
+                                                    <span class="block-title">块 {{ loop.index }}</span>
+                                                </div>
+                                                <div class="block-content">
+                                                    <p>{{ block }}</p>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="section-content">
+                                    <p class="no-content">暂无分块内容</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- 步骤3：内容分析 -->
+                        <div class="analysis-step-content" id="step3-content">
+                            <h3 class="section-title">步骤3：内容分析</h3>
+                            {% if analysis_sections %}
+                                {% for section in analysis_sections %}
+                                    <div class="analysis-section">
+                                        <h4 class="section-subtitle">{{ section.title }}</h4>
+                                        <div class="section-content">
+                                            {{ section.content | safe }}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="section-content">
+                                    <p class="no-content">暂无分析结果</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- 分析结果标签页 -->
+                    <div class="tab-content" id="result-tab">
+                        {% if analysis_sections %}
+                            {% for section in analysis_sections %}
+                                <div class="analysis-section">
+                                    <h3 class="section-title">{{ section.title }}</h3>
+                                    <div class="section-content">
+                                        {{ section.content | safe }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="loading-animation">
+                                <div class="spinner"></div>
+                                <p class="loading-text">正在分析中，请稍候...</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Markdown标签页 -->
+                    <div class="tab-content" id="markdown-tab">
+                        <div class="markdown-editor">
+                            <div class="markdown-content" id="markdown-content">
+                                {% if analysis_sections %}
+                                    <!-- 这里将由JavaScript填充Markdown内容 -->
+                                {% else %}
+                                    <div class="loading-animation">
+                                        <div class="spinner"></div>
+                                        <p class="loading-text">正在生成Markdown，请稍候...</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
