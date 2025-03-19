@@ -5,6 +5,141 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DeepPaper - 分析结果</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* 添加图像和分析块的样式 */
+        .image-block {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .image-block img {
+            max-width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .image-caption {
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .analysis-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .analysis-block {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fff;
+            overflow: hidden;
+        }
+        
+        .block-header {
+            padding: 12px 15px;
+            background-color: #f5f5f5;
+            border-bottom: 1px solid #e0e0e0;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .block-content {
+            padding: 15px;
+        }
+        
+        .original-content, .analysis-content {
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .original-content {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .analysis-content {
+            background-color: #f0f7ff;
+        }
+        
+        .tab-container {
+            margin-top: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            background-color: #f5f5f5;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f5f5f5;
+            border: 1px solid transparent;
+            border-radius: 4px 4px 0 0;
+            margin-right: 2px;
+        }
+        
+        .tab.active {
+            background-color: #fff;
+            border-color: #ddd;
+            border-bottom-color: transparent;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-top: none;
+            background-color: #fff;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .web-search-results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        
+        .web-search-item {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .web-search-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .toggle-original-btn {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+        
+        .toggle-original-btn:hover {
+            background-color: #5a6268;
+        }
+    </style>
 </head>
 <body>
     <div class="container analysis-container">
@@ -29,7 +164,7 @@
             {% endwith %}
             
             <div class="analysis-header">
-                <h2>分析结果</h2>
+                <h2>DeepPaper 解读结果</h2>
                 <div class="analysis-meta">
                     <p>文件名: {{ original_filename }}</p>
                     <p>分析模型: {{ settings.model }}</p>
@@ -38,89 +173,133 @@
                 </div>
             </div>
             
-            <div class="analysis-content">
-                {% if analysis_sections %}
-                    <div class="analysis-steps">
-                        <div class="steps-header">
-                            <div class="step-indicator {% if extracted_content %}active{% endif %}">1</div>
-                            <div class="step-line"></div>
-                            <div class="step-indicator {% if content_blocks %}active{% endif %}">2</div>
-                            <div class="step-line"></div>
-                            <div class="step-indicator {% if analysis_sections %}active{% endif %}">3</div>
-                        </div>
-                        <div class="steps-labels">
-                            <div class="step-label">提取PDF内容</div>
-                            <div class="step-label">内容分块</div>
-                            <div class="step-label">内容分析</div>
-                        </div>
-                    </div>
-                    
-                    <!-- 步骤1：提取PDF内容 -->
-                    <div class="analysis-step-content" id="step1-content">
-                        <h3 class="section-title">步骤1：提取PDF内容</h3>
-                        {% if extracted_content %}
-                            <div class="section-content">
-                                <div class="extracted-content">
-                                    <p>{{ extracted_content }}</p>
+            <!-- 网络搜索结果 -->
+            {% if web_search_results %}
+                <div class="web-search-results">
+                    <h3>网络参考资料</h3>
+                    {% for result in web_search_results %}
+                        <div class="web-search-item">{{ result }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <!-- 分析内容区域 -->
+            <div class="tab-container">
+                <div class="tabs">
+                    <div class="tab active" data-tab="tab-all">所有内容</div>
+                    <div class="tab" data-tab="tab-summary">摘要分析</div>
+                    <div class="tab" data-tab="tab-key-points">关键要点</div>
+                </div>
+                
+                <!-- 所有内容选项卡 -->
+                <div id="tab-all" class="tab-content active">
+                    <div class="analysis-container">
+                        {% for section in analysis_sections %}
+                            {% if section.type == 'image' %}
+                                <!-- 图像块 -->
+                                <div class="image-block">
+                                    <img src="data:image/{{ section.image_format }};base64,{{ section.image_data }}" alt="{{ section.title }}">
+                                    <div class="image-caption">{{ section.title }}</div>
                                 </div>
-                            </div>
-                        {% else %}
-                            <div class="section-content">
-                                <p class="no-content">暂无提取内容</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- 步骤2：内容分块 -->
-                    <div class="analysis-step-content" id="step2-content">
-                        <h3 class="section-title">步骤2：内容分块</h3>
-                        {% if content_blocks %}
-                            <div class="section-content">
-                                <div class="content-blocks">
-                                    {% for block in content_blocks %}
-                                        <div class="content-block">
-                                            <div class="block-header">
-                                                <span class="block-title">块 {{ loop.index }}</span>
-                                            </div>
-                                            <div class="block-content">
-                                                <p>{{ block }}</p>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        {% else %}
-                            <div class="section-content">
-                                <p class="no-content">暂无分块内容</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- 步骤3：内容分析 -->
-                    <div class="analysis-step-content" id="step3-content">
-                        <h3 class="section-title">步骤3：内容分析</h3>
-                        {% if analysis_sections %}
-                            {% for section in analysis_sections %}
-                                <div class="analysis-section">
-                                    <h4 class="section-subtitle">{{ section.title }}</h4>
-                                    <div class="section-content">
-                                        {{ section.content | safe }}
+                            {% else %}
+                                <!-- 文本分析块 -->
+                                <div class="analysis-block">
+                                    <div class="block-header">
+                                        {{ section.title }}
+                                        <button class="toggle-original-btn" onclick="toggleOriginal(this)">显示原文</button>
+                                    </div>
+                                    <div class="block-content">
+                                        <div class="original-content" style="display: none;">{{ section.original_content }}</div>
+                                        <div class="analysis-content">{{ section.analysis | safe }}</div>
                                     </div>
                                 </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="section-content">
-                                <p class="no-content">暂无分析结果</p>
-                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- 摘要分析选项卡 -->
+                <div id="tab-summary" class="tab-content">
+                    <div class="analysis-container">
+                        {% for section in analysis_sections %}
+                            {% if section.title and ('摘要' in section.title or 'Abstract' in section.title) %}
+                                <div class="analysis-block">
+                                    <div class="block-header">
+                                        {{ section.title }}
+                                    </div>
+                                    <div class="block-content">
+                                        <div class="analysis-content">{{ section.analysis | safe }}</div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if not any('摘要' in section.title or 'Abstract' in section.title for section in analysis_sections) %}
+                            <p>未找到摘要分析内容</p>
                         {% endif %}
                     </div>
                 </div>
-            {% endif %}
+                
+                <!-- 关键要点选项卡 -->
+                <div id="tab-key-points" class="tab-content">
+                    <!-- 这里可以添加自动提取的关键点，或者显示第一个分析块的内容 -->
+                    <div class="analysis-container">
+                        {% if analysis_sections and analysis_sections[0].type != 'image' %}
+                            <div class="analysis-block">
+                                <div class="block-header">文档主要要点</div>
+                                <div class="block-content">
+                                    <div class="analysis-content">{{ analysis_sections[0].analysis | safe }}</div>
+                                </div>
+                            </div>
+                        {% elif analysis_sections|length > 1 and analysis_sections[1].type != 'image' %}
+                            <div class="analysis-block">
+                                <div class="block-header">文档主要要点</div>
+                                <div class="block-content">
+                                    <div class="analysis-content">{{ analysis_sections[1].analysis | safe }}</div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <p>未找到关键要点分析内容</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
         </main>
         
         <footer>
             <p>&copy; 2023 DeepPaper - 智能论文分析工具</p>
         </footer>
     </div>
+    
+    <script>
+        // 选项卡切换
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // 移除所有选项卡的active类
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                // 给当前选项卡添加active类
+                this.classList.add('active');
+                
+                // 隐藏所有内容
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                // 显示对应内容
+                document.getElementById(this.dataset.tab).classList.add('active');
+            });
+        });
+        
+        // 显示/隐藏原始内容
+        function toggleOriginal(button) {
+            const contentBlock = button.closest('.block-header').nextElementSibling;
+            const originalContent = contentBlock.querySelector('.original-content');
+            
+            if (originalContent.style.display === 'none') {
+                originalContent.style.display = 'block';
+                button.textContent = '隐藏原文';
+            } else {
+                originalContent.style.display = 'none';
+                button.textContent = '显示原文';
+            }
+        }
+    </script>
 </body>
 </html>

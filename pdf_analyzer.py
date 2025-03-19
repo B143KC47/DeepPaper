@@ -1,7 +1,10 @@
 import fitz  # PyMuPDF
 import re
 import os
+import base64
+import io
 from collections import defaultdict
+from PIL import Image
 
 class PDFAnalyzer:
     """PDF 论文分析器"""
@@ -20,6 +23,8 @@ class PDFAnalyzer:
         self.references = []
         self.figures = []
         self.tables = []
+        self.images = []  # 存储提取的图像
+        self.image_data = {}  # 存储图像数据，键为页码和位置，值为base64编码的图像
         
     def load_document(self):
         """加载 PDF 文档"""
@@ -42,6 +47,82 @@ class PDFAnalyzer:
             
         self.text = full_text
         return full_text
+    
+    def extract_images(self):
+        """提取PDF中的图像"""
+        if not self.doc:
+            if not self.load_document():
+                return []
+        
+        images = []
+        image_data = {}
+        
+        for page_num, page in enumerate(self.doc):
+            # 获取页面上的图像对象列表
+            image_list = page.get_images(full=True)
+            
+            for img_index, img in enumerate(image_list):
+                xref = img[0]  # 图像的xref
+                
+                # 提取图像数据
+                try:
+                    base_image = self.doc.extract_image(xref)
+                    image_bytes = base_image["image"]
+                    image_ext = base_image["ext"]
+                    
+                    # 使用PIL处理图像
+                    try:
+                        pil_image = Image.open(io.BytesIO(image_bytes))
+                        # 跳过非常小的图像，可能是背景或图标
+                        if pil_image.width < 100 or pil_image.height < 100:
+                            continue
+                            
+                        # 转换为base64以便在HTML中显示
+                        buffered = io.BytesIO()
+                        pil_image.save(buffered, format=image_ext.upper())
+                        img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+                        
+                        # 存储图像信息
+                        image_key = f"p{page_num}_i{img_index}"
+                        image_data[image_key] = {
+                            'base64': img_base64,
+                            'format': image_ext,
+                            'page': page_num,
+                            'width': pil_image.width,
+                            'height': pil_image.height
+                        }
+                        
+                        # 尝试获取图像在页面上的位置
+                        try:
+                            # 查找包含该图像的矩形区域
+                            img_rects = page.search_for_image(xref)
+                            if img_rects:
+                                rect = img_rects[0]  # 使用第一个匹配项
+                                image_data[image_key]['rect'] = {
+                                    'x0': rect.x0,
+                                    'y0': rect.y0,
+                                    'x1': rect.x1,
+                                    'y1': rect.y1
+                                }
+                        except Exception as e:
+                            # 如果无法确定位置，记录错误但继续处理
+                            print(f"获取图像位置时出错: {str(e)}")
+                        
+                        # 添加到图像列表
+                        images.append({
+                            'key': image_key,
+                            'page': page_num,
+                            'index': img_index,
+                            'format': image_ext
+                        })
+                    except Exception as e:
+                        print(f"处理图像时出错: {str(e)}")
+                except Exception as e:
+                    print(f"提取图像时出错: {str(e)}")
+        
+        self.images = images
+        self.image_data = image_data
+        return images
         
     def extract_metadata(self):
         """提取元数据信息"""
@@ -190,9 +271,12 @@ class PDFAnalyzer:
         return figures, tables
         
     def analyze_content_blocks(self):
-        """将文档内容分块"""
+        """将文档内容分块，并包含相关图像"""
         if not self.sections:
             self.detect_sections()
+            
+        if not self.images:
+            self.extract_images()
             
         content_blocks = []
         
@@ -202,7 +286,11 @@ class PDFAnalyzer:
             title = metadata.get("title", "未知标题")
             author = metadata.get("author", "未知作者")
             metadata_block = f"【标题和作者信息】{title} - {author}"
-            content_blocks.append(metadata_block)
+            content_blocks.append({
+                "type": "text",
+                "title": "标题和作者信息",
+                "content": metadata_block
+            })
             
         # 添加各章节块
         for section_title, section_content in self.sections.items():
@@ -217,20 +305,75 @@ class PDFAnalyzer:
                         current_block += sentence + " "
                     else:
                         if current_block:
-                            content_blocks.append(f"【{section_title}】{current_block.strip()}")
+                            content_blocks.append({
+                                "type": "text",
+                                "title": section_title,
+                                "content": f"【{section_title}】{current_block.strip()}"
+                            })
                         current_block = sentence + " "
                 
                 if current_block:
-                    content_blocks.append(f"【{section_title}】{current_block.strip()}")
+                    content_blocks.append({
+                        "type": "text",
+                        "title": section_title,
+                        "content": f"【{section_title}】{current_block.strip()}"
+                    })
             else:
-                content_blocks.append(f"【{section_title}】{section_content}")
+                content_blocks.append({
+                    "type": "text",
+                    "title": section_title,
+                    "content": f"【{section_title}】{section_content}"
+                })
                 
         # 如果没有检测到章节，尝试按页面分块
-        if not content_blocks and self.doc:
+        if not self.sections and self.doc:
             for page_num, page in enumerate(self.doc):
                 page_text = page.get_text()
                 if page_text.strip():
-                    content_blocks.append(f"【页面 {page_num+1}】{page_text[:max_block_size]}")
+                    content_blocks.append({
+                        "type": "text",
+                        "title": f"页面 {page_num+1}",
+                        "content": f"【页面 {page_num+1}】{page_text[:max_block_size]}"
+                    })
+        
+        # 添加提取到的图像
+        for img in self.images:
+            img_key = img['key']
+            img_data = self.image_data.get(img_key, {})
+            
+            # 寻找这个图像可能属于的章节或页面
+            # 简单方法：根据图像所在页面和页面内容估计它所属的章节
+            img_page = img.get('page', 0)
+            closest_section = None
+            closest_content_index = None
+            
+            # 找到与这个图像相关的文本块
+            for i, block in enumerate(content_blocks):
+                if block['type'] == 'text':
+                    # 如果文本中包含"图"或"Figure"相关词，可能与图像相关
+                    if re.search(r'(?:图|Fig|figure|表|Table)', block['content'], re.IGNORECASE):
+                        closest_content_index = i
+                        break
+            
+            # 如果找到了可能相关的文本块，则在这个文本块后添加图像块
+            if closest_content_index is not None:
+                # 插入图像块
+                content_blocks.insert(closest_content_index + 1, {
+                    "type": "image",
+                    "title": f"图像 (页面 {img_page+1})",
+                    "image_key": img_key,
+                    "image_data": img_data.get('base64', ''),
+                    "image_format": img_data.get('format', 'png')
+                })
+            else:
+                # 如果没找到相关文本块，就直接添加
+                content_blocks.append({
+                    "type": "image",
+                    "title": f"图像 (页面 {img_page+1})",
+                    "image_key": img_key,
+                    "image_data": img_data.get('base64', ''),
+                    "image_format": img_data.get('format', 'png')
+                })
                     
         return content_blocks
         
@@ -417,6 +560,7 @@ class PDFAnalyzer:
                 abstract_content += f"<p>摘要内容：{value_analysis['abstract']}</p>"
                 
                 if detail_level in ['standard', 'detailed']:
+
                     abstract_content += "<p>摘要结构评价：</p>"
                     if len(value_analysis["abstract"]) < 100:
                         abstract_content += "<p>摘要篇幅较短，建议扩展以涵盖研究目的、方法、结果和结论等核心内容。</p>"

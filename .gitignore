@@ -5,3 +5,6 @@ uploads/*
 # Ignore public directory content
 public/*
 !public/.gitkeep
+
+
+__pycache__/*
