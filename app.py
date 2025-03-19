@@ -44,7 +44,7 @@ def allowed_file(filename):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('ui/index.html')
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -81,7 +81,7 @@ def uploaded_file(filename):
 @app.route('/settings')
 def settings():
     current_settings = load_settings()
-    return render_template('settings.html', current_settings=current_settings)
+    return render_template('ui/settings.html', current_settings=current_settings)
 
 @app.route('/save_settings', methods=['POST'])
 def save_settings():
@@ -236,7 +236,7 @@ def analysis_result(filename):
         flash('没有找到分析结果，请重新分析')
         return redirect(url_for('view_pdf', filename=filename))
     
-    return render_template('analysis.html', 
+    return render_template('analysis/analysis.html', 
                            filename=filename,
                            original_filename=analysis_result.get('original_filename'),
                            settings=analysis_result.get('settings'),
