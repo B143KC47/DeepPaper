@@ -467,7 +467,14 @@ class PDFAnalyzer:
                 "title": f"图像 (页面 {img_page+1})",
                 "image_key": img_key,
                 "image_data": img_data.get('base64', ''),
-                "image_format": img
+                "image_format": img.get('format', '')
+            }
+            image_blocks.append(image_block)
+            # 将图像块添加到内容块列表中
+            content_blocks.append(image_block)
+            
+        # 返回所有内容块
+        return content_blocks
         
     def analyze_methods(self):
         """分析研究方法"""
