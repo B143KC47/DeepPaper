@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepPaper - 分析进行中</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .progress-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .progress-title {
+            margin-bottom: 30px;
+            font-size: 1.8rem;
+            color: var(--text-light);
+        }
+        
+        .progress-info {
+            margin: 20px 0;
+            font-size: 1.1rem;
+            color: var(--text-light);
+            opacity: 0.8;
+        }
+        
+        .progress-bar-container {
+            width: 80%;
+            max-width: 600px;
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--warm-gradient);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+        
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            max-width: 600px;
+            margin: 30px 0;
+        }
+        
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            width: 20%;
+        }
+        
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+        
+        .step-icon.active {
+            background: var(--warm-gradient);
+            box-shadow: 0 0 15px var(--warm-shadow);
+        }
+        
+        .step-icon.completed {
+            background: var(--warm-gradient);
+            box-shadow: 0 0 15px var(--warm-shadow);
+        }
+        
+        .step-label {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            opacity: 0.7;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .step-label.active {
+            opacity: 1;
+            font-weight: bold;
+        }
+        
+        .step-connector {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background-color: rgba(255, 255, 255, 0.1);
+            z-index: 1;
+        }
+        
+        .step:first-child .step-connector {
+            display: none;
+        }
+        
+        .step-connector.completed {
+            background: var(--warm-gradient);
+        }
+        
+        .loading-animation {
+            margin: 30px 0;
+        }
+        
+        .loading-dots {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--warm-gradient);
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+        
+        .dot:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+        
+        .dot:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+                box-shadow: 0 0 10px var(--warm-shadow);
+            }
+        }
+        
+        .cancel-button {
+            margin-top: 40px;
+            padding: 10px 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+        }
+        
+        .cancel-button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: var(--hover-transform);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>DeepPaper</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('index') }}" class="back-link">返回首页</a>
+                <a href="{{ url_for('view_pdf', filename=filename) }}" class="back-link">返回PDF查看</a>
+                <a href="{{ url_for('settings') }}" class="settings-link">设置</a>
+            </div>
+        </header>
+        
+        <main>
+            <div class="progress-container glass-container">
+                <h2 class="progress-title">正在分析您的PDF文档</h2>
+                
+                <div class="progress-steps">
+                    <div class="step">
+                        <div class="step-icon completed">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                        </div>
+                        <div class="step-label active">提取文本</div>
+                        <div class="step-connector completed"></div>
+                    </div>
+                    <div class="step">
+                        <div class="step-icon active">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                            </svg>
+                        </div>
+                        <div class="step-label active">分析内容</div>
+                        <div class="step-connector"></div>
+                    </div>
+                    <div class="step">
+                        <div class="step-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </div>
+                        <div class="step-label">生成报告</div>
+                        <div class="step-connector"></div>
+                    </div>
+                    <div class="step">
+                        <div class="step-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="16 12 12 8 8 12"></polyline>
+                                <line x1="12" y1="16" x2="12" y2="8"></line>
+                            </svg>
+                        </div>
+                        <div class="step-label">完成</div>
+                    </div>
+                </div>
+                
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progress-bar" style="width: 30%;"></div>
+                </div>
+                
+                <div class="progress-info" id="progress-info">正在分析文档内容，这可能需要几分钟时间...</div>
+                
+                <div class="loading-animation">
+                    <div class="loading-dots">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                </div>
+                
+                <a href="{{ url_for('view_pdf', filename=filename) }}" class="cancel-button">取消分析</a>
+            </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2023 DeepPaper - 智能论文分析工具</p>
+        </footer>
+    </div>
+    
+    <script>
+        // 模拟分析进度
+        document.addEventListener('DOMContentLoaded', function() {
+            const progressBar = document.getElementById('progress-bar');
+            const progressInfo = document.getElementById('progress-info');
+            const steps = document.querySelectorAll('.step');
+            
+            let progress = 30; // 初始进度
+            const totalTime = 10000; // 总模拟时间（毫秒）
+            const interval = 500; // 更新间隔（毫秒）
+            const increment = (100 - progress) / (totalTime / interval);
+            
+            const progressMessages = [
+                "正在提取文档结构...",
+                "分析文档内容中...",
+                "处理图表和引用...",
+                "生成智能解读...",
+                "整合分析结果...",
+                "即将完成分析..."
+            ];
+            
+            let messageIndex = 0;
+            
+            // 更新进度条和消息
+            const updateProgress = setInterval(function() {
+                progress += increment;
+                progressBar.style.width = progress + '%';
+                
+                // 更新步骤状态
+                if (progress >= 30 && progress < 60) {
+                    // 第二步活跃
+                    updateStepStatus(1, 'active');
+                } else if (progress >= 60 && progress < 90) {
+                    // 第三步活跃
+                    updateStepStatus(1, 'completed');
+                    updateStepStatus(2, 'active');
+                } else if (progress >= 90) {
+                    // 第四步活跃
+                    updateStepStatus(2, 'completed');
+                    updateStepStatus(3, 'active');
+                }
+                
+                // 随机更新消息
+                if (Math.random() > 0.7) {
+                    messageIndex = (messageIndex + 1) % progressMessages.length;
+                    progressInfo.textContent = progressMessages[messageIndex];
+                }
+                
+                // 完成后跳转
+                if (progress >= 100) {
+                    clearInterval(updateProgress);
+                    progressInfo.textContent = "分析完成，正在跳转到结果页面...";
+                    
+                    // 延迟跳转，给用户一个完成的视觉反馈
+                    setTimeout(function() {
+                        window.location.href = "{{ url_for('analysis_result', filename=filename) }}";
+                    }, 1000);
+                }
+            }, interval);
+            
+            // 更新步骤状态的函数
+            function updateStepStatus(stepIndex, status) {
+                const step = steps[stepIndex];
+                const icon = step.querySelector('.step-icon');
+                const label = step.querySelector('.step-label');
+                const connector = step.querySelector('.step-connector');
+                
+                if (status === 'active') {
+                    icon.classList.add('active');
+                    label.classList.add('active');
+                } else if (status === 'completed') {
+                    icon.classList.remove('active');
+                    icon.classList.add('completed');
+                    if (connector) connector.classList.add('completed');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
