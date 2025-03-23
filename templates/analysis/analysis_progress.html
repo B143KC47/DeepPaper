@@ -174,6 +174,51 @@
             background-color: rgba(255, 255, 255, 0.2);
             transform: var(--hover-transform);
         }
+        
+        /* 日志容器样式 */
+        .log-container {
+            width: 80%;
+            max-width: 600px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: var(--border-radius-sm);
+            border: 1px solid var(--glass-border);
+            text-align: left;
+        }
+        
+        .log-title {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: var(--text-light);
+            text-align: center;
+        }
+        
+        .log-content {
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .log-entry.info {
+            color: #8ecdf8;
+        }
+        
+        .log-entry.warning {
+            color: #f8d58e;
+        }
+        
+        .log-entry.error {
+            color: #f88e8e;
+        }
     </style>
 </head>
 <body>
@@ -244,6 +289,14 @@
                 
                 <div class="progress-info" id="progress-info">正在分析文档内容，这可能需要几分钟时间...</div>
                 
+                <!-- 实时日志显示区域 -->
+                <div class="log-container glass-panel">
+                    <h3 class="log-title">分析日志</h3>
+                    <div class="log-content" id="log-content">
+                        <div class="log-entry">开始分析...</div>
+                    </div>
+                </div>
+                
                 <div class="loading-animation">
                     <div class="loading-dots">
                         <div class="dot"></div>
@@ -262,16 +315,16 @@
     </div>
     
     <script>
-        // 模拟分析进度
+        // 实际分析进度
         document.addEventListener('DOMContentLoaded', function() {
             const progressBar = document.getElementById('progress-bar');
             const progressInfo = document.getElementById('progress-info');
+            const logContent = document.getElementById('log-content');
             const steps = document.querySelectorAll('.step');
             
             let progress = 30; // 初始进度
-            const totalTime = 10000; // 总模拟时间（毫秒）
             const interval = 500; // 更新间隔（毫秒）
-            const increment = (100 - progress) / (totalTime / interval);
+            let lastLogTimestamp = null; // 上次获取日志的时间戳
             
             const progressMessages = [
                 "正在提取文档结构...",
@@ -283,10 +336,15 @@
             ];
             
             let messageIndex = 0;
+            let isAnalyzing = false;
+            let analyzeCompleted = false;
             
             // 更新进度条和消息
             const updateProgress = setInterval(function() {
-                progress += increment;
+                if (!isAnalyzing) return;
+                
+                progress += 1;
+                if (progress > 100) progress = 100;
                 progressBar.style.width = progress + '%';
                 
                 // 更新步骤状态
@@ -309,17 +367,72 @@
                     progressInfo.textContent = progressMessages[messageIndex];
                 }
                 
-                // 完成后跳转
-                if (progress >= 100) {
+                // 获取实时日志
+                fetchAnalysisLogs();
+                
+                // 如果分析已完成，则跳转
+                if (analyzeCompleted) {
                     clearInterval(updateProgress);
                     progressInfo.textContent = "分析完成，正在跳转到结果页面...";
+                    progressBar.style.width = '100%';
+                    updateStepStatus(3, 'completed');
                     
                     // 延迟跳转，给用户一个完成的视觉反馈
                     setTimeout(function() {
-                        window.location.href = "{{ url_for('analysis_result', filename=filename) }}";
+                        window.location.href = analyzeCompleted;
                     }, 1000);
                 }
             }, interval);
+            
+            // 获取分析日志
+            function fetchAnalysisLogs() {
+                fetch('{{ url_for("api_analysis_logs") }}')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.logs && data.logs.length > 0) {
+                            updateLogDisplay(data.logs);
+                            lastLogTimestamp = data.timestamp;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('获取日志出错:', error);
+                    });
+            }
+            
+            // 更新日志显示
+            function updateLogDisplay(logs) {
+                logs.forEach(log => {
+                    const logEntry = document.createElement('div');
+                    logEntry.className = `log-entry ${log.level.toLowerCase()}`;
+                    logEntry.textContent = `[${log.timestamp.split(' ')[1]}] ${log.message}`;
+                    logContent.appendChild(logEntry);
+                    
+                    // 自动滚动到底部
+                    logContent.scrollTop = logContent.scrollHeight;
+                });
+            }
+            
+            // 开始实际分析过程
+            function startAnalysis() {
+                if (isAnalyzing) return;
+                isAnalyzing = true;
+                
+                // 调用API进行实际分析
+                fetch('{{ url_for("api_analyze", filename=filename) }}')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            progressInfo.textContent = `分析出错: ${data.error}`;
+                            isAnalyzing = false;
+                        } else if (data.redirect) {
+                            analyzeCompleted = data.redirect;
+                        }
+                    })
+                    .catch(error => {
+                        progressInfo.textContent = `分析过程中出错: ${error.message}`;
+                        isAnalyzing = false;
+                    });
+            }
             
             // 更新步骤状态的函数
             function updateStepStatus(stepIndex, status) {
@@ -337,6 +450,12 @@
                     if (connector) connector.classList.add('completed');
                 }
             }
+            
+            // 页面加载后立即开始分析
+            startAnalysis();
+            
+            // 初始获取一次日志
+            fetchAnalysisLogs();
         });
     </script>
 </body>

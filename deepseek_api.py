@@ -2,6 +2,7 @@ import requests
 import os
 import json
 import time
+from logger import logger  # 导入日志模块
 
 class DeepSeekAPI:
     """DeepSeek API 接口封装类"""
@@ -52,7 +53,10 @@ class DeepSeekAPI:
         Returns:
             解析结果文本
         """
+        logger.info(f"开始使用DeepSeek API分析文本，语言: {language}, 最大令牌数: {max_tokens}")
+        
         if not self.api_key:
+            logger.warning("未设置API密钥，使用模拟分析结果")
             return self._mock_analysis(prompt, language)
             
         # 添加语言设置到提示词
@@ -76,26 +80,31 @@ class DeepSeekAPI:
         
         try:
             # 发送请求到 DeepSeek API
+            logger.info(f"发送请求到 DeepSeek API: {self.endpoint}")
             response = requests.post(self.endpoint, headers=headers, json=data)
             response.raise_for_status()  # 检查HTTP错误
             
             # 解析响应
+            logger.info("成功接收到API响应，正在解析结果")
             result = response.json()
             if "choices" in result and len(result["choices"]) > 0:
+                logger.info("成功解析API响应，获取到分析结果")
                 return result["choices"][0]["message"]["content"]
             else:
-                return "API 返回了无效的响应格式"
+                error_msg = "API 返回了无效的响应格式"
+                logger.error(error_msg)
+                return error_msg
                 
         except requests.exceptions.RequestException as e:
             # 处理请求异常
             error_msg = f"API 请求失败: {str(e)}"
-            print(error_msg)
+            logger.error(error_msg)
             return error_msg
             
         except json.JSONDecodeError:
             # 处理 JSON 解析错误
             error_msg = "API 返回了无效的 JSON 响应"
-            print(error_msg)
+            logger.error(error_msg)
             return error_msg
             
     def _mock_analysis(self, prompt, language):
