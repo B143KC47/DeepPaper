@@ -7,6 +7,10 @@ from datetime import datetime
 from pdf_analyzer import PDFAnalyzer
 from deepseek_api import DeepSeekAPI  # 引入DeepSeek API工具
 import web_search  # 引入网络搜索工具
+from dotenv import load_dotenv  # 引入dotenv库加载环境变量
+
+# 加载.env文件中的环境变量
+load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'deeppaper_secret_key'
@@ -102,13 +106,25 @@ def settings():
 
 @app.route('/save_settings', methods=['POST'])
 def save_settings():
+    # 获取API密钥
+    api_key = request.form.get('api_key', '')
+    
+    # 如果提供了API密钥，则更新环境变量
+    if api_key:
+        # 将API密钥写入.env文件
+        with open('.env', 'w', encoding='utf-8') as f:
+            f.write(f"# DeepSeek API密钥\nDEEPSEEK_API_KEY={api_key}")
+        # 更新当前环境变量
+        os.environ['DEEPSEEK_API_KEY'] = api_key
+    
+    # 保存其他设置到settings.json，但不包括API密钥
     settings = {
         'model': request.form.get('model', DEFAULT_SETTINGS['model']),
         'language': request.form.get('language', DEFAULT_SETTINGS['language']),
         'detail_level': request.form.get('detail_level', DEFAULT_SETTINGS['detail_level']),
         'custom_prompt': request.form.get('custom_prompt', ''),
         'enable_web_search': 'enable_web_search' in request.form,
-        'api_key': request.form.get('api_key', '')
+        'api_key': ''  # 不保存API密钥到settings.json
     }
     save_settings_to_file(settings)
     flash('设置已保存')

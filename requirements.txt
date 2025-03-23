@@ -1,7 +1,5 @@
-Flask==2.3.3
-Werkzeug==2.3.7
-PyMuPDF==1.23.7
-Pillow==10.1.0
-requests==2.31.0
-beautifulsoup4==4.12.2
-python-dotenv==1.0.0
+flask==2.0.1
+werkzeug==2.0.1
+pymupdf==1.19.6
+requests==2.26.0
+python-dotenv==0.19.1

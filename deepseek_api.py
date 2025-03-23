@@ -14,10 +14,10 @@ class DeepSeekAPI:
             api_key: API 密钥，如不提供则从环境变量获取
         """
         self.model = model
-        # 从环境变量获取 API 密钥，或使用传入的值
-        self.api_key = api_key or os.environ.get('DEEPSEEK_API_KEY')
+        # 优先从环境变量获取 API 密钥，其次使用传入的值
+        self.api_key = os.environ.get('DEEPSEEK_API_KEY') or api_key
         if not self.api_key:
-            print("警告: 未设置 DeepSeek API 密钥。请在环境变量中设置 DEEPSEEK_API_KEY 或在初始化时提供。")
+            print("警告: 未设置 DeepSeek API 密钥。请在.env文件中设置 DEEPSEEK_API_KEY 或在初始化时提供。")
             
         # 根据模型选择合适的 API 端点和模型 ID
         self.model_mapping = {

@@ -57,7 +57,7 @@
                     <div class="form-group">
                         <label for="api_key">DeepSeek API密钥:</label>
                         <input type="password" name="api_key" id="api_key" class="api-key-input" value="{{ current_settings.api_key }}" placeholder="请输入您的DeepSeek API密钥">
-                        <small class="form-text">如不提供，将使用环境变量中的DEEPSEEK_API_KEY</small>
+                        <small class="form-text">API密钥将安全地存储在本地.env文件中，不会被提交到版本控制系统</small>
                     </div>
                     
                     <div class="form-group">
