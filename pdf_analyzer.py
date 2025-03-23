@@ -94,16 +94,28 @@ class PDFAnalyzer:
                         
                         # 尝试获取图像在页面上的位置
                         try:
-                            # 查找包含该图像的矩形区域
-                            img_rects = page.search_for_image(xref)
-                            if img_rects:
-                                rect = img_rects[0]  # 使用第一个匹配项
-                                image_data[image_key]['rect'] = {
-                                    'x0': rect.x0,
-                                    'y0': rect.y0,
-                                    'x1': rect.x1,
-                                    'y1': rect.y1
-                                }
+                            # 在PyMuPDF 1.19.6版本中，没有search_for_image方法
+                            # 使用图像的基本信息来估计位置
+                            # 从图像对象中获取更多信息
+                            width = img[1]  # 图像宽度
+                            height = img[2]  # 图像高度
+                            
+                            # 使用页面尺寸和图像尺寸估算位置
+                            # 这只是一个估计，不如直接获取精确
+                            page_rect = page.rect
+                            
+                            # 创建一个默认的矩形区域（居中显示）
+                            # 实际位置需要更复杂的算法确定，这里只是提供一个占位符
+                            image_data[image_key]['rect'] = {
+                                'x0': page_rect.width * 0.2,  # 估计左边界
+                                'y0': page_rect.height * 0.2,  # 估计上边界
+                                'x1': page_rect.width * 0.8,  # 估计右边界
+                                'y1': page_rect.height * 0.8   # 估计下边界
+                            }
+                            
+                            # 添加一个标志，表示这是估计的位置，而不是精确位置
+                            image_data[image_key]['position_estimated'] = True
+                            
                         except Exception as e:
                             # 如果无法确定位置，记录错误但继续处理
                             print(f"获取图像位置时出错: {str(e)}")

@@ -3,6 +3,6 @@
     "language": "zh",
     "detail_level": "standard",
     "custom_prompt": "",
-    "enable_web_search": false,
+    "enable_web_search": true,
     "api_key": ""
 }

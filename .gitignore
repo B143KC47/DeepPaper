@@ -6,8 +6,6 @@ uploads/*
 public/*
 !public/.gitkeep
 
-
 __pycache__/*
-
 
 .env
