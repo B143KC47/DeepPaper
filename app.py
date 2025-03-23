@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, session, jsonify
-import logger  # 导入自定义日志模块
+from logger import logger  # 导入自定义日志模块
 import os
 import uuid
 import json
@@ -146,7 +146,7 @@ def deep_paper(filename):
 def api_analysis_logs():
     """获取分析过程的实时日志"""
     # 获取最新的日志记录
-    logs = logger.logger.get_logs_since_last_update()
+    logs = logger.get_logs_since_last_update()
     return jsonify({
         'logs': logs,
         'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -228,6 +228,9 @@ def api_analyze(filename):
                 analysis_sections.append({
                     'type': 'image',
                     'title': block.get('title', f'图像 {i+1}'),
+                    'content': block.get('content', '')
+                })
+                continue
                 
             # 处理文本块
             block_content = block.get('content', '')
@@ -383,6 +386,9 @@ def process_analysis(filename):
                 analysis_sections.append({
                     'type': 'image',
                     'title': block.get('title', f'图像 {i+1}'),
+                    'content': block.get('content', '')
+                })
+                continue
                 
             # 处理文本块
             block_content = block.get('content', '')

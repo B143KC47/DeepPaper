@@ -283,7 +283,7 @@ class PDFAnalyzer:
         return figures, tables
         
     def analyze_content_blocks(self):
-        """将文档内容分块，并包含相关图像"""
+        """将文档内容分块，并包含相关图像，使用智能分块策略减少块数量"""
         if not self.sections:
             self.detect_sections()
             
@@ -303,91 +303,171 @@ class PDFAnalyzer:
                 "title": "标题和作者信息",
                 "content": metadata_block
             })
-            
-        # 添加各章节块
+        
+        # 定义更大的块大小，减少分块数量
+        max_block_size = 3000  # 增加到3000字符
+        min_block_size = 500   # 最小块大小，避免过小的块
+        
+        # 按章节重要性分类，优先保持完整性的章节
+        important_sections = ["Abstract", "Introduction", "Conclusion", "Discussion", "摘要", "引言", "结论", "讨论"]
+        
+        # 存储章节内容，用于后续智能合并
+        section_blocks = {}
+        
+        # 第一步：处理各章节，按语义边界分块
         for section_title, section_content in self.sections.items():
-            # 限制块大小，避免过大
-            max_block_size = 1000  # 字符数
-            if len(section_content) > max_block_size:
-                # 按句子分割
-                sentences = re.split(r'(?<=[.!?])\s+', section_content)
-                current_block = ""
-                for sentence in sentences:
-                    if len(current_block) + len(sentence) < max_block_size:
-                        current_block += sentence + " "
-                    else:
-                        if current_block:
-                            content_blocks.append({
-                                "type": "text",
-                                "title": section_title,
-                                "content": f"【{section_title}】{current_block.strip()}"
-                            })
-                        current_block = sentence + " "
-                
-                if current_block:
-                    content_blocks.append({
-                        "type": "text",
-                        "title": section_title,
-                        "content": f"【{section_title}】{current_block.strip()}"
-                    })
-            else:
+            # 检查章节是否为重要章节
+            is_important = any(imp_sec.lower() in section_title.lower() for imp_sec in important_sections)
+            
+            # 重要章节尽量保持完整，除非超过最大块大小的两倍
+            if is_important and len(section_content) <= max_block_size * 2:
                 content_blocks.append({
                     "type": "text",
                     "title": section_title,
                     "content": f"【{section_title}】{section_content}"
                 })
-                
-        # 如果没有检测到章节，尝试按页面分块
+                continue
+            
+            # 其他章节，如果内容不多，直接作为一个块
+            if len(section_content) <= max_block_size:
+                content_blocks.append({
+                    "type": "text",
+                    "title": section_title,
+                    "content": f"【{section_title}】{section_content}"
+                })
+                continue
+            
+            # 内容较多的章节，按语义边界分块
+            # 首先尝试按段落分割
+            paragraphs = re.split(r'\n\s*\n', section_content)
+            
+            # 如果段落分割后仍有过大的段落，再按句子分割
+            current_block = ""
+            current_paragraphs = []
+            
+            for para in paragraphs:
+                # 如果当前段落加上已有内容不超过最大块大小，则添加
+                if len(current_block) + len(para) + 2 <= max_block_size:  # +2 for newline
+                    current_paragraphs.append(para)
+                    current_block = "\n\n".join(current_paragraphs)
+                else:
+                    # 如果当前段落本身就超过最大块大小，需要按句子分割
+                    if len(para) > max_block_size:
+                        # 如果当前已有内容不为空，先保存
+                        if current_block:
+                            content_blocks.append({
+                                "type": "text",
+                                "title": section_title,
+                                "content": f"【{section_title}】{current_block}"
+                            })
+                            current_block = ""
+                            current_paragraphs = []
+                        
+                        # 按句子分割大段落
+                        sentences = re.split(r'(?<=[.!?])\s+', para)
+                        para_block = ""
+                        
+                        for sentence in sentences:
+                            if len(para_block) + len(sentence) + 1 <= max_block_size:  # +1 for space
+                                para_block += sentence + " "
+                            else:
+                                # 如果当前句子块不为空且达到最小块大小，保存
+                                if para_block and len(para_block) >= min_block_size:
+                                    content_blocks.append({
+                                        "type": "text",
+                                        "title": section_title,
+                                        "content": f"【{section_title}】{para_block.strip()}"
+                                    })
+                                para_block = sentence + " "
+                        
+                        # 保存最后一个句子块
+                        if para_block:
+                            current_block = para_block.strip()
+                            current_paragraphs = [current_block]
+                    else:
+                        # 当前段落不超过最大块大小，但加上已有内容会超过，先保存已有内容
+                        if current_block:
+                            content_blocks.append({
+                                "type": "text",
+                                "title": section_title,
+                                "content": f"【{section_title}】{current_block}"
+                            })
+                        # 开始新的块，包含当前段落
+                        current_paragraphs = [para]
+                        current_block = para
+            
+            # 保存最后一个块
+            if current_block:
+                content_blocks.append({
+                    "type": "text",
+                    "title": section_title,
+                    "content": f"【{section_title}】{current_block}"
+                })
+        
+        # 如果没有检测到章节，尝试按页面智能分块
         if not self.sections and self.doc:
+            all_pages_text = ""
             for page_num, page in enumerate(self.doc):
                 page_text = page.get_text()
                 if page_text.strip():
+                    all_pages_text += page_text + "\n\n"
+            
+            # 如果总文本不超过最大块大小，作为一个块
+            if len(all_pages_text) <= max_block_size:
+                content_blocks.append({
+                    "type": "text",
+                    "title": "文档内容",
+                    "content": all_pages_text
+                })
+            else:
+                # 按页面分组，尽量将相邻页面合并为一个块
+                current_block = ""
+                current_pages = []
+                
+                for page_num, page in enumerate(self.doc):
+                    page_text = page.get_text()
+                    if not page_text.strip():
+                        continue
+                    
+                    if len(current_block) + len(page_text) + 2 <= max_block_size:
+                        current_pages.append(page_num + 1)
+                        current_block += page_text + "\n\n"
+                    else:
+                        # 保存当前块
+                        if current_block:
+                            page_range = f"页面 {min(current_pages)}-{max(current_pages)}" if len(current_pages) > 1 else f"页面 {current_pages[0]}"
+                            content_blocks.append({
+                                "type": "text",
+                                "title": page_range,
+                                "content": f"【{page_range}】{current_block.strip()}"
+                            })
+                        # 开始新的块
+                        current_pages = [page_num + 1]
+                        current_block = page_text + "\n\n"
+                
+                # 保存最后一个块
+                if current_block:
+                    page_range = f"页面 {min(current_pages)}-{max(current_pages)}" if len(current_pages) > 1 else f"页面 {current_pages[0]}"
                     content_blocks.append({
                         "type": "text",
-                        "title": f"页面 {page_num+1}",
-                        "content": f"【页面 {page_num+1}】{page_text[:max_block_size]}"
+                        "title": page_range,
+                        "content": f"【{page_range}】{current_block.strip()}"
                     })
         
-        # 添加提取到的图像
+        # 智能处理图像：将图像与相关文本块关联
+        image_blocks = []
         for img in self.images:
             img_key = img['key']
             img_data = self.image_data.get(img_key, {})
-            
-            # 寻找这个图像可能属于的章节或页面
-            # 简单方法：根据图像所在页面和页面内容估计它所属的章节
             img_page = img.get('page', 0)
-            closest_section = None
-            closest_content_index = None
             
-            # 找到与这个图像相关的文本块
-            for i, block in enumerate(content_blocks):
-                if block['type'] == 'text':
-                    # 如果文本中包含"图"或"Figure"相关词，可能与图像相关
-                    if re.search(r'(?:图|Fig|figure|表|Table)', block['content'], re.IGNORECASE):
-                        closest_content_index = i
-                        break
-            
-            # 如果找到了可能相关的文本块，则在这个文本块后添加图像块
-            if closest_content_index is not None:
-                # 插入图像块
-                content_blocks.insert(closest_content_index + 1, {
-                    "type": "image",
-                    "title": f"图像 (页面 {img_page+1})",
-                    "image_key": img_key,
-                    "image_data": img_data.get('base64', ''),
-                    "image_format": img_data.get('format', 'png')
-                })
-            else:
-                # 如果没找到相关文本块，就直接添加
-                content_blocks.append({
-                    "type": "image",
-                    "title": f"图像 (页面 {img_page+1})",
-                    "image_key": img_key,
-                    "image_data": img_data.get('base64', ''),
-                    "image_format": img_data.get('format', 'png')
-                })
-                    
-        return content_blocks
+            # 创建图像块
+            image_block = {
+                "type": "image",
+                "title": f"图像 (页面 {img_page+1})",
+                "image_key": img_key,
+                "image_data": img_data.get('base64', ''),
+                "image_format": img
         
     def analyze_methods(self):
         """分析研究方法"""
