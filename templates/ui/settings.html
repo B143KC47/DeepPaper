@@ -53,6 +53,22 @@
                             <option value="detailed" {% if current_settings.detail_level == 'detailed' %}selected{% endif %}>详细</option>
                         </select>
                     </div>
+
+                    <div class="form-group">
+                        <label for="api_key">DeepSeek API密钥:</label>
+                        <input type="password" name="api_key" id="api_key" class="api-key-input" value="{{ current_settings.api_key }}" placeholder="请输入您的DeepSeek API密钥">
+                        <small class="form-text">如不提供，将使用环境变量中的DEEPSEEK_API_KEY</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="custom_prompt">自定义提示词:</label>
+                        <textarea name="custom_prompt" id="custom_prompt" class="custom-prompt-textarea" rows="4" placeholder="请输入自定义提示词，留空则使用默认提示词">{{ current_settings.custom_prompt }}</textarea>
+                    </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" name="enable_web_search" id="enable_web_search" {% if current_settings.enable_web_search %}checked{% endif %}>
+                        <label for="enable_web_search">启用网络搜索</label>
+                    </div>
                     
                     <button type="submit" class="save-button">保存设置</button>
                 </form>

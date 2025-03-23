@@ -24,7 +24,8 @@ DEFAULT_SETTINGS = {
     'language': 'zh',
     'detail_level': 'standard',
     'custom_prompt': '',
-    'enable_web_search': False
+    'enable_web_search': False,
+    'api_key': ''
 }
 
 # 默认提示词模板
@@ -106,7 +107,8 @@ def save_settings():
         'language': request.form.get('language', DEFAULT_SETTINGS['language']),
         'detail_level': request.form.get('detail_level', DEFAULT_SETTINGS['detail_level']),
         'custom_prompt': request.form.get('custom_prompt', ''),
-        'enable_web_search': 'enable_web_search' in request.form
+        'enable_web_search': 'enable_web_search' in request.form,
+        'api_key': request.form.get('api_key', '')
     }
     save_settings_to_file(settings)
     flash('设置已保存')
@@ -137,7 +139,7 @@ def deep_paper(filename):
         content_blocks = analyzer.analyze_content_blocks()
         
         # 步骤3：创建DeepSeek API实例
-        deepseek = DeepSeekAPI(model=settings['model'])
+        deepseek = DeepSeekAPI(model=settings['model'], api_key=settings.get('api_key', ''))
         
         # 步骤4：准备解读提示词
         prompt = settings.get('custom_prompt', '')
