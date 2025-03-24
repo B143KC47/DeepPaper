@@ -140,7 +140,16 @@ body::before {
     font-size: 1.5rem;
     color: var(--warm-light);
     opacity: 0.9;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
+}
+
+.hero-description {
+    font-size: 1.1rem;
+    color: var(--text-light);
+    opacity: 0.8;
+    max-width: 800px;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
 }
 
 .cta-buttons {
@@ -351,6 +360,199 @@ body::before {
     color: var(--warm-accent);
 }
 
+/* 高级特性区域样式 */
+.advanced-section {
+    padding: 4rem 0;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+}
+
+.advanced-section h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 2.5rem;
+    color: var(--warm-light);
+}
+
+.section-description {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto 3rem;
+    color: var(--text-light);
+    opacity: 0.8;
+    font-size: 1.1rem;
+}
+
+.advanced-features {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.advanced-feature-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    gap: 2rem;
+    padding: 0 1rem;
+}
+
+.advanced-feature-card {
+    display: flex;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+    box-shadow: 0 4px 30px var(--glass-shadow);
+    transition: all var(--transition-speed);
+}
+
+.advanced-feature-card:hover {
+    transform: var(--hover-transform);
+    box-shadow: 0 6px 30px var(--glass-shadow), var(--glass-glow);
+}
+
+.advanced-feature-card img {
+    width: 180px;
+    height: 180px;
+    object-fit: cover;
+}
+
+.feature-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.feature-content h3 {
+    margin-bottom: 1rem;
+    color: var(--warm-accent);
+}
+
+.feature-content p {
+    color: var(--text-light);
+    opacity: 0.8;
+    line-height: 1.6;
+}
+
+/* 使用流程区域样式 */
+.workflow-section {
+    padding: 4rem 0;
+}
+
+.workflow-section h2 {
+    text-align: center;
+    margin-bottom: 3rem;
+    font-size: 2.5rem;
+    color: var(--warm-light);
+}
+
+.workflow-container {
+    display: flex;
+    justify-content: space-between;
+    max-width: 1000px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.workflow-container::before {
+    content: '';
+    position: absolute;
+    top: 40px;
+    left: 60px;
+    right: 60px;
+    height: 2px;
+    background: var(--warm-gradient);
+    z-index: 0;
+}
+
+.workflow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 22%;
+    position: relative;
+    z-index: 1;
+}
+
+.step-number {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--warm-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--text-dark);
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0 15px var(--warm-shadow);
+}
+
+.step-content {
+    text-align: center;
+}
+
+.step-content h3 {
+    margin-bottom: 0.5rem;
+    color: var(--warm-accent);
+}
+
+.step-content p {
+    color: var(--text-light);
+    opacity: 0.8;
+}
+
+/* FAQ区域样式 */
+.faq-section {
+    padding: 4rem 0;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+}
+
+.faq-section h2 {
+    text-align: center;
+    margin-bottom: 3rem;
+    font-size: 2.5rem;
+    color: var(--warm-light);
+}
+
+.faq-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.faq-item {
+    margin-bottom: 1.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+    transition: all var(--transition-speed);
+}
+
+.faq-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 20px var(--glass-shadow);
+}
+
+.faq-question {
+    padding: 1.2rem 1.5rem;
+    font-weight: bold;
+    color: var(--warm-accent);
+    cursor: pointer;
+    position: relative;
+}
+
+.faq-answer {
+    padding: 0 1.5rem 1.2rem;
+    color: var(--text-light);
+    opacity: 0.8;
+    line-height: 1.6;
+}
+
 /* 页脚样式 */
 footer {
     background: var(--primary-dark);
@@ -419,6 +621,38 @@ footer {
     .feature-card, .demo-card {
         margin: 0 1rem;
     }
+    
+    .advanced-feature-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .advanced-feature-card {
+        flex-direction: column;
+    }
+    
+    .advanced-feature-card img {
+        width: 100%;
+        height: auto;
+        max-height: 180px;
+    }
+    
+    .workflow-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .workflow-container::before {
+        display: none;
+    }
+    
+    .workflow-step {
+        width: 80%;
+        margin-bottom: 2rem;
+    }
+    
+    .faq-question {
+        font-size: 0.9rem;
+    }
 }
 
 @media (max-width: 480px) {
@@ -430,6 +664,10 @@ footer {
         font-size: 1.2rem;
     }
     
+    .hero-description {
+        font-size: 1rem;
+    }
+    
     .cta-buttons {
         flex-direction: column;
         gap: 1rem;
@@ -437,5 +675,25 @@ footer {
     
     .feature-card, .demo-card {
         margin: 0 0.5rem;
+    }
+    
+    .advanced-feature-card img {
+        max-height: 150px;
+    }
+    
+    .step-number {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .faq-question {
+        font-size: 0.85rem;
+        padding: 1rem;
+    }
+    
+    .faq-answer {
+        font-size: 0.85rem;
+        padding: 0 1rem 1rem;
     }
 }
