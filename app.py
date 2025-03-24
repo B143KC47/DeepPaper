@@ -466,7 +466,8 @@ def process_analysis(filename):
             'analysis_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
         
-        return redirect(url_for('analysis_with_preview', filename=filename))
+        # 返回JSON响应，包含重定向URL，供前端JavaScript使用
+        return jsonify({'success': True, 'redirect': url_for('analysis_with_preview', filename=filename)})
         
     except Exception as e:
         flash(f'分析过程中出错: {str(e)}')

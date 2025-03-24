@@ -508,11 +508,41 @@
                         if (data.logs && data.logs.length > 0) {
                             updateLogDisplay(data.logs);
                             lastLogTimestamp = data.timestamp;
+                            
+                            // 检查日志中是否有表示分析完成的信息
+                            checkAnalysisCompletion(data.logs);
                         }
                     })
                     .catch(error => {
                         console.error('获取日志出错:', error);
                     });
+            }
+            
+            // 检查分析是否完成
+            function checkAnalysisCompletion(logs) {
+                if (!isAnalyzing || analyzeCompleted) return;
+                
+                // 检查日志中是否包含表示分析完成的关键词
+                for (const log of logs) {
+                    if (log.message && (
+                        log.message.includes('解读完成') ||
+                        log.message.includes('分析结果') ||
+                        log.message.includes('分析完成')
+                    )) {
+                        // 查询分析结果URL
+                        fetch('{{ url_for("api_analyze", filename=filename) }}')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.redirect) {
+                                    analyzeCompleted = data.redirect;
+                                }
+                            })
+                            .catch(error => {
+                                console.error('获取分析结果URL出错:', error);
+                            });
+                        break;
+                    }
+                }
             }
             
             // 更新日志显示
@@ -569,7 +599,17 @@
                             progressInfo.textContent = `分析出错: ${data.error}`;
                             isAnalyzing = false;
                         } else if (data.redirect) {
+                            // 设置跳转URL，使用API返回的重定向URL
                             analyzeCompleted = data.redirect;
+                            // 立即更新UI显示分析完成
+                            progressInfo.textContent = "分析完成，正在跳转到结果页面...";
+                            progressBar.style.width = '100%';
+                            updateStepStatus(3, 'completed');
+                            
+                            // 延迟跳转，给用户一个完成的视觉反馈
+                            setTimeout(function() {
+                                window.location.href = analyzeCompleted;
+                            }, 1000);
                         }
                     })
                     .catch(error => {
