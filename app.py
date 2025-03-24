@@ -30,6 +30,7 @@ DEFAULT_SETTINGS = {
     'detail_level': 'standard',
     'custom_prompt': '',
     'enable_web_search': False,
+    'test_mode': False,
     'api_key': ''
 }
 
@@ -125,6 +126,7 @@ def save_settings():
         'detail_level': request.form.get('detail_level', DEFAULT_SETTINGS['detail_level']),
         'custom_prompt': request.form.get('custom_prompt', ''),
         'enable_web_search': 'enable_web_search' in request.form,
+        'test_mode': 'test_mode' in request.form,
         'api_key': ''  # 不保存API密钥到settings.json
     }
     save_settings_to_file(settings)
@@ -218,6 +220,22 @@ def api_analyze(filename):
         # 步骤6：生成分析结果
         logger.info("步骤6: 开始生成分析结果")
         analysis_sections = []
+        
+        # 检查是否启用测试模式
+        test_mode = settings.get('test_mode', False)
+        if test_mode:
+            logger.info("测试模式已启用，只处理第一个内容分块")
+            # 在测试模式下，只保留第一个非图像内容块
+            filtered_blocks = []
+            for block in content_blocks:
+                if block.get('type') != 'image':
+                    filtered_blocks.append(block)
+                    break
+            # 如果没有找到文本块，则保留第一个图像块（如果有）
+            if not filtered_blocks and content_blocks:
+                filtered_blocks = [content_blocks[0]]
+            content_blocks = filtered_blocks
+            logger.info(f"测试模式：将只处理 {len(content_blocks)} 个内容块")
 
         # 处理每个内容块
         for i, block in enumerate(content_blocks):
@@ -376,6 +394,22 @@ def process_analysis(filename):
         # 步骤6：生成分析结果
         logger.info("步骤6: 开始生成分析结果")
         analysis_sections = []
+        
+        # 检查是否启用测试模式
+        test_mode = settings.get('test_mode', False)
+        if test_mode:
+            logger.info("测试模式已启用，只处理第一个内容分块")
+            # 在测试模式下，只保留第一个非图像内容块
+            filtered_blocks = []
+            for block in content_blocks:
+                if block.get('type') != 'image':
+                    filtered_blocks.append(block)
+                    break
+            # 如果没有找到文本块，则保留第一个图像块（如果有）
+            if not filtered_blocks and content_blocks:
+                filtered_blocks = [content_blocks[0]]
+            content_blocks = filtered_blocks
+            logger.info(f"测试模式：将只处理 {len(content_blocks)} 个内容块")
 
         # 处理每个内容块
         for i, block in enumerate(content_blocks):

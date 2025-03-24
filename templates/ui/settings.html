@@ -70,6 +70,12 @@
                         <label for="enable_web_search">启用网络搜索</label>
                     </div>
                     
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" name="test_mode" id="test_mode" {% if current_settings.test_mode %}checked{% endif %}>
+                        <label for="test_mode">测试模式（仅分析一个内容分块）</label>
+                        <small class="form-text">启用后只会分析文章的第一个文本分块，用于快速测试</small>
+                    </div>
+                    
                     <button type="submit" class="save-button">保存设置</button>
                 </form>
             </div>
