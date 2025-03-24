@@ -13,7 +13,9 @@
             justify-content: center;
             min-height: 60vh;
             text-align: center;
-            padding: 20px;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
         }
         
         .progress-title {
@@ -26,27 +28,50 @@
             margin: 20px 0;
             font-size: 1.1rem;
             color: var(--text-light);
-            opacity: 0.8;
+            opacity: 0.9;
+            transition: opacity 0.3s ease;
+            min-height: 1.5em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .progress-bar-container {
             width: 80%;
             max-width: 600px;
-            height: 10px;
+            height: 8px;
             background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 5px;
+            border-radius: 10px;
             overflow: hidden;
-            margin: 20px 0;
+            margin: 25px 0;
             position: relative;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
         }
         
         .progress-bar {
             height: 100%;
             width: 0%;
             background: var(--warm-gradient);
-            border-radius: 5px;
-            transition: width 0.5s ease;
+            border-radius: 10px;
+            transition: width 0.5s ease-out;
             position: relative;
+            box-shadow: 0 0 10px var(--warm-shadow);
+        }
+        
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: progress-shine 2s infinite linear;
+        }
+        
+        @keyframes progress-shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
         }
         
         .progress-steps {
@@ -66,22 +91,24 @@
         }
         
         .step-icon {
-            width: 40px;
-            height: 40px;
+            width: 45px;
+            height: 45px;
             border-radius: 50%;
             background-color: rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             position: relative;
             z-index: 2;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid var(--glass-border);
         }
         
         .step-icon.active {
             background: var(--warm-gradient);
-            box-shadow: 0 0 15px var(--warm-shadow);
+            box-shadow: 0 0 20px var(--warm-shadow);
+            transform: scale(1.1);
         }
         
         .step-icon.completed {
@@ -89,27 +116,42 @@
             box-shadow: 0 0 15px var(--warm-shadow);
         }
         
+        .step-icon svg {
+            transition: all 0.3s ease;
+            opacity: 0.7;
+        }
+        
+        .step-icon.active svg,
+        .step-icon.completed svg {
+            opacity: 1;
+            filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+        }
+        
         .step-label {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             color: var(--text-light);
             opacity: 0.7;
             text-align: center;
             transition: all 0.3s ease;
+            max-width: 100px;
+            margin: 0 auto;
         }
         
         .step-label.active {
             opacity: 1;
             font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
         }
         
         .step-connector {
             position: absolute;
-            top: 20px;
+            top: 22px;
             left: 50%;
             width: 100%;
-            height: 2px;
+            height: 3px;
             background-color: rgba(255, 255, 255, 0.1);
             z-index: 1;
+            transition: all 0.5s ease;
         }
         
         .step:first-child .step-connector {
@@ -118,6 +160,7 @@
         
         .step-connector.completed {
             background: var(--warm-gradient);
+            box-shadow: 0 0 8px var(--warm-shadow);
         }
         
         .loading-animation {
@@ -128,15 +171,16 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
         
         .dot {
-            width: 12px;
-            height: 12px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
             background: var(--warm-gradient);
             animation: pulse 1.5s infinite ease-in-out;
+            box-shadow: 0 0 5px var(--warm-shadow);
         }
         
         .dot:nth-child(2) {
@@ -155,57 +199,102 @@
             50% {
                 transform: scale(1.2);
                 opacity: 1;
-                box-shadow: 0 0 10px var(--warm-shadow);
+                box-shadow: 0 0 15px var(--warm-shadow);
             }
         }
         
         .cancel-button {
             margin-top: 40px;
-            padding: 10px 20px;
+            padding: 12px 25px;
             background-color: rgba(255, 255, 255, 0.1);
             color: var(--text-light);
             border: 1px solid var(--glass-border);
-            border-radius: var(--border-radius-sm);
+            border-radius: var(--border-radius-md);
             cursor: pointer;
             transition: all var(--transition-speed) ease;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cancel-button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: all 0.8s ease;
         }
         
         .cancel-button:hover {
             background-color: rgba(255, 255, 255, 0.2);
             transform: var(--hover-transform);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .cancel-button:hover::after {
+            left: 100%;
         }
         
         /* 日志容器样式 */
         .log-container {
-            width: 80%;
-            max-width: 600px;
-            max-height: 200px;
+            width: 85%;
+            max-width: 650px;
+            max-height: 220px;
             overflow-y: auto;
-            margin: 20px 0;
-            padding: 15px;
-            background-color: rgba(0, 0, 0, 0.2);
-            border-radius: var(--border-radius-sm);
+            margin: 25px 0;
+            padding: 18px;
+            background-color: rgba(0, 0, 0, 0.25);
+            border-radius: var(--border-radius-md);
             border: 1px solid var(--glass-border);
             text-align: left;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2), 0 0 15px rgba(0, 0, 0, 0.1);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) rgba(0, 0, 0, 0.2);
+        }
+        
+        .log-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .log-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+        }
+        
+        .log-container::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
         }
         
         .log-title {
-            font-size: 1rem;
-            margin-bottom: 10px;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
             color: var(--text-light);
             text-align: center;
+            font-weight: 500;
+            letter-spacing: 0.5px;
         }
         
         .log-content {
-            font-family: monospace;
-            font-size: 0.85rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
             color: var(--text-light);
+            line-height: 1.5;
         }
         
         .log-entry {
-            margin-bottom: 5px;
-            padding: 3px 0;
+            margin-bottom: 6px;
+            padding: 4px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background-color 0.2s ease;
+        }
+        
+        .log-entry:hover {
+            background-color: rgba(255, 255, 255, 0.05);
         }
         
         .log-entry.info {
@@ -218,6 +307,16 @@
         
         .log-entry.error {
             color: #f88e8e;
+        }
+        
+        .log-timestamp {
+            font-weight: bold;
+            opacity: 0.8;
+            margin-right: 5px;
+        }
+        
+        .log-message {
+            font-weight: normal;
         }
     </style>
 </head>
@@ -343,28 +442,45 @@
             const updateProgress = setInterval(function() {
                 if (!isAnalyzing) return;
                 
-                progress += 1;
+                // 使进度增长更加自然
+                const increment = Math.max(0.5, Math.random() * 1.5);
+                progress += increment;
                 if (progress > 100) progress = 100;
+                
+                // 使用CSS动画使过渡更平滑
                 progressBar.style.width = progress + '%';
                 
-                // 更新步骤状态
+                // 更新步骤状态，添加过渡延迟使步骤变化更自然
                 if (progress >= 30 && progress < 60) {
                     // 第二步活跃
                     updateStepStatus(1, 'active');
                 } else if (progress >= 60 && progress < 90) {
                     // 第三步活跃
-                    updateStepStatus(1, 'completed');
-                    updateStepStatus(2, 'active');
+                    setTimeout(() => {
+                        updateStepStatus(1, 'completed');
+                        setTimeout(() => {
+                            updateStepStatus(2, 'active');
+                        }, 300);
+                    }, 200);
                 } else if (progress >= 90) {
                     // 第四步活跃
-                    updateStepStatus(2, 'completed');
-                    updateStepStatus(3, 'active');
+                    setTimeout(() => {
+                        updateStepStatus(2, 'completed');
+                        setTimeout(() => {
+                            updateStepStatus(3, 'active');
+                        }, 300);
+                    }, 200);
                 }
                 
-                // 随机更新消息
-                if (Math.random() > 0.7) {
+                // 平滑更新消息，降低更新频率使体验更好
+                if (Math.random() > 0.85) {
                     messageIndex = (messageIndex + 1) % progressMessages.length;
-                    progressInfo.textContent = progressMessages[messageIndex];
+                    // 添加淡入淡出效果
+                    progressInfo.style.opacity = '0';
+                    setTimeout(() => {
+                        progressInfo.textContent = progressMessages[messageIndex];
+                        progressInfo.style.opacity = '1';
+                    }, 300);
                 }
                 
                 // 获取实时日志
@@ -401,14 +517,42 @@
             
             // 更新日志显示
             function updateLogDisplay(logs) {
+                // 创建文档片段以提高性能
+                const fragment = document.createDocumentFragment();
+                
                 logs.forEach(log => {
                     const logEntry = document.createElement('div');
                     logEntry.className = `log-entry ${log.level.toLowerCase()}`;
-                    logEntry.textContent = `[${log.timestamp.split(' ')[1]}] ${log.message}`;
-                    logContent.appendChild(logEntry);
                     
-                    // 自动滚动到底部
-                    logContent.scrollTop = logContent.scrollHeight;
+                    // 格式化时间戳和消息
+                    const timestamp = document.createElement('span');
+                    timestamp.className = 'log-timestamp';
+                    timestamp.textContent = `[${log.timestamp.split(' ')[1]}]`;
+                    
+                    const message = document.createElement('span');
+                    message.className = 'log-message';
+                    message.textContent = ` ${log.message}`;
+                    
+                    logEntry.appendChild(timestamp);
+                    logEntry.appendChild(message);
+                    
+                    // 添加淡入效果
+                    logEntry.style.opacity = '0';
+                    fragment.appendChild(logEntry);
+                    
+                    // 使用setTimeout创建淡入动画
+                    setTimeout(() => {
+                        logEntry.style.transition = 'opacity 0.3s ease';
+                        logEntry.style.opacity = '1';
+                    }, 10);
+                });
+                
+                logContent.appendChild(fragment);
+                
+                // 平滑滚动到底部
+                logContent.scrollTo({
+                    top: logContent.scrollHeight,
+                    behavior: 'smooth'
                 });
             }
             
