@@ -116,6 +116,97 @@
             background-color: #5a6268;
         }
         
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .copy-btn, .annotate-btn {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+        
+        .copy-btn:hover, .annotate-btn:hover {
+            background-color: #5a6268;
+        }
+        
+        .annotation-container {
+            position: relative;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .annotation-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            min-height: 60px;
+            font-family: inherit;
+        }
+        
+        .annotation-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 5px;
+            gap: 5px;
+        }
+        
+        .save-annotation-btn, .cancel-annotation-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        
+        .save-annotation-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .cancel-annotation-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .annotations-list {
+            margin-top: 10px;
+            border-top: 1px dashed #ddd;
+            padding-top: 10px;
+            display: none;
+        }
+        
+        .annotation-item {
+            background-color: #ffffd0;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            position: relative;
+        }
+        
+        .annotation-text {
+            margin-bottom: 5px;
+        }
+        
+        .annotation-meta {
+            font-size: 0.8em;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .delete-annotation {
+            color: #dc3545;
+            cursor: pointer;
+        }
+        
         .image-block {
             margin: 20px 0;
             text-align: center;
@@ -199,11 +290,23 @@
                                 <div class="analysis-block">
                                     <div class="block-header">
                                         {{ section.title }}
-                                        <button class="toggle-original-btn" onclick="toggleOriginal(this)">显示原文</button>
+                                        <div class="action-buttons">
+                                            <button class="copy-btn" onclick="copyContent(this)">复制</button>
+                                            <button class="annotate-btn" onclick="toggleAnnotation(this)">注解</button>
+                                            <button class="toggle-original-btn" onclick="toggleOriginal(this)">显示原文</button>
+                                        </div>
                                     </div>
                                     <div class="block-content">
                                         <div class="original-content">{{ section.original_content }}</div>
                                         <div class="analysis-content">{{ section.analysis | safe }}</div>
+                                        <div class="annotation-container">
+                                            <textarea class="annotation-input" placeholder="添加您的注解..."></textarea>
+                                            <div class="annotation-actions">
+                                                <button class="save-annotation-btn" onclick="saveAnnotation(this)">保存</button>
+                                                <button class="cancel-annotation-btn" onclick="cancelAnnotation(this)">取消</button>
+                                            </div>
+                                        </div>
+                                        <div class="annotations-list"></div>
                                     </div>
                                 </div>
                             {% endif %}
@@ -214,7 +317,7 @@
         </main>
         
         <footer>
-            <p>&copy; 2023 DeepPaper - 智能论文分析工具</p>
+            <p>&copy; 2025 DeepPaper - 智能论文分析工具</p>
         </footer>
     </div>
     
@@ -232,6 +335,179 @@
                 button.textContent = '显示原文';
             }
         }
+        
+        // 复制内容
+        function copyContent(button) {
+            const contentBlock = button.closest('.block-header').nextElementSibling;
+            const analysisContent = contentBlock.querySelector('.analysis-content').innerText;
+            
+            // 创建临时文本区域
+            const textarea = document.createElement('textarea');
+            textarea.value = analysisContent;
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            // 复制文本
+            document.execCommand('copy');
+            
+            // 移除临时文本区域
+            document.body.removeChild(textarea);
+            
+            // 显示复制成功提示
+            const originalText = button.textContent;
+            button.textContent = '已复制';
+            setTimeout(() => {
+                button.textContent = originalText;
+            }, 2000);
+        }
+        
+        // 显示/隐藏注解输入框
+        function toggleAnnotation(button) {
+            const contentBlock = button.closest('.block-header').nextElementSibling;
+            const annotationContainer = contentBlock.querySelector('.annotation-container');
+            
+            if (annotationContainer.style.display === 'none') {
+                annotationContainer.style.display = 'block';
+                button.textContent = '取消注解';
+            } else {
+                annotationContainer.style.display = 'none';
+                button.textContent = '注解';
+            }
+        }
+        
+        // 保存注解
+        function saveAnnotation(button) {
+            const contentBlock = button.closest('.annotation-container').parentElement;
+            const annotationInput = contentBlock.querySelector('.annotation-input');
+            const annotationsList = contentBlock.querySelector('.annotations-list');
+            const annotationText = annotationInput.value.trim();
+            
+            if (annotationText) {
+                // 创建新的注解项
+                const now = new Date();
+                const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+                
+                const annotationItem = document.createElement('div');
+                annotationItem.className = 'annotation-item';
+                annotationItem.innerHTML = `
+                    <div class="annotation-text">${annotationText}</div>
+                    <div class="annotation-meta">
+                        <span>${dateStr}</span>
+                        <span class="delete-annotation" onclick="deleteAnnotation(this)">删除</span>
+                    </div>
+                `;
+                
+                // 显示注解列表并添加新注解
+                annotationsList.style.display = 'block';
+                annotationsList.appendChild(annotationItem);
+                
+                // 清空输入框并隐藏
+                annotationInput.value = '';
+                contentBlock.querySelector('.annotation-container').style.display = 'none';
+                
+                // 恢复按钮文本
+                const annotateBtn = contentBlock.previousElementSibling.querySelector('.annotate-btn');
+                annotateBtn.textContent = '注解';
+                
+                // 保存注解到本地存储
+                saveAnnotationsToLocalStorage();
+            }
+        }
+        
+        // 取消添加注解
+        function cancelAnnotation(button) {
+            const contentBlock = button.closest('.annotation-container').parentElement;
+            const annotationInput = contentBlock.querySelector('.annotation-input');
+            
+            // 清空输入框并隐藏
+            annotationInput.value = '';
+            contentBlock.querySelector('.annotation-container').style.display = 'none';
+            
+            // 恢复按钮文本
+            const annotateBtn = contentBlock.previousElementSibling.querySelector('.annotate-btn');
+            annotateBtn.textContent = '注解';
+        }
+        
+        // 删除注解
+        function deleteAnnotation(element) {
+            const annotationItem = element.closest('.annotation-item');
+            const annotationsList = annotationItem.parentElement;
+            
+            // 删除注解项
+            annotationsList.removeChild(annotationItem);
+            
+            // 如果没有注解了，隐藏注解列表
+            if (annotationsList.children.length === 0) {
+                annotationsList.style.display = 'none';
+            }
+            
+            // 更新本地存储
+            saveAnnotationsToLocalStorage();
+        }
+        
+        // 保存注解到本地存储
+        function saveAnnotationsToLocalStorage() {
+            const filename = '{{ filename }}';
+            const allBlocks = document.querySelectorAll('.analysis-block');
+            const annotations = {};
+            
+            allBlocks.forEach((block, index) => {
+                const annotationItems = block.querySelectorAll('.annotation-item');
+                if (annotationItems.length > 0) {
+                    annotations[index] = [];
+                    annotationItems.forEach(item => {
+                        annotations[index].push({
+                            text: item.querySelector('.annotation-text').innerText,
+                            date: item.querySelector('.annotation-meta span').innerText
+                        });
+                    });
+                }
+            });
+            
+            // 保存到本地存储
+            localStorage.setItem(`deeppaper_annotations_${filename}`, JSON.stringify(annotations));
+        }
+        
+        // 从本地存储加载注解
+        function loadAnnotationsFromLocalStorage() {
+            const filename = '{{ filename }}';
+            const savedAnnotations = localStorage.getItem(`deeppaper_annotations_${filename}`);
+            
+            if (savedAnnotations) {
+                const annotations = JSON.parse(savedAnnotations);
+                const allBlocks = document.querySelectorAll('.analysis-block');
+                
+                Object.keys(annotations).forEach(blockIndex => {
+                    const block = allBlocks[parseInt(blockIndex)];
+                    if (block) {
+                        const annotationsList = block.querySelector('.annotations-list');
+                        annotations[blockIndex].forEach(annotation => {
+                            const annotationItem = document.createElement('div');
+                            annotationItem.className = 'annotation-item';
+                            annotationItem.innerHTML = `
+                                <div class="annotation-text">${annotation.text}</div>
+                                <div class="annotation-meta">
+                                    <span>${annotation.date}</span>
+                                    <span class="delete-annotation" onclick="deleteAnnotation(this)">删除</span>
+                                </div>
+                            `;
+                            
+                            annotationsList.appendChild(annotationItem);
+                        });
+                        
+                        if (annotations[blockIndex].length > 0) {
+                            annotationsList.style.display = 'block';
+                        }
+                    }
+                });
+            }
+        }
+        
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载保存的注解
+            loadAnnotationsFromLocalStorage();
+        });
     </script>
 </body>
 </html>
