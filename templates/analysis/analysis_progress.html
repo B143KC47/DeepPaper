@@ -494,18 +494,21 @@
                     progressBar.style.width = '100%';
                     updateStepStatus(3, 'completed');
                     
-                    // 延迟跳转，给用户一个完成的视觉反馈
+                    // 延迟跳转，给用户一个完成的视觉反馈，并确保session有足够时间完成写入
                     setTimeout(function() {
                         console.log('执行页面跳转到:', analyzeCompleted);
                         // 确保URL是有效的
-                        if (analyzeCompleted && analyzeCompleted.startsWith('/')) {
+                        if (analyzeCompleted && typeof analyzeCompleted === 'string' && analyzeCompleted.startsWith('/')) {
                             window.location.href = analyzeCompleted;
                         } else {
                             console.error('无效的跳转URL:', analyzeCompleted);
+                            progressInfo.textContent = "跳转失败，请手动返回PDF查看页面";
                             // 尝试回退到查看PDF页面
-                            window.location.href = '{{ url_for("view_pdf", filename=filename) }}';
+                            setTimeout(function() {
+                                window.location.href = '{{ url_for("view_pdf", filename=filename) }}';
+                            }, 2000);
                         }
-                    }, 1000);
+                    }, 3000); // 增加延迟到3秒，确保session有足够时间完成写入
                 }
             }, interval);
             
