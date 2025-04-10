@@ -74,22 +74,22 @@ def upload_file():
     if 'file' not in request.files:
         flash('没有选择文件')
         return redirect(url_for('index'))
-    
+
     file = request.files['file']
-    
+
     if file.filename == '':
         flash('没有选择文件')
         return redirect(url_for('index'))
-    
+
     if file and allowed_file(file.filename):
         # 使用UUID生成唯一文件名，避免文件名冲突
         original_filename = secure_filename(file.filename)
         filename = f"{uuid.uuid4().hex}_{original_filename}"
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
-        
+
         return redirect(url_for('view_pdf', filename=filename))
-    
+
     flash('只允许上传PDF文件')
     return redirect(url_for('index'))
 
@@ -110,7 +110,7 @@ def settings():
 def save_settings():
     # 获取API密钥
     api_key = request.form.get('api_key', '')
-    
+
     # 如果提供了API密钥，则更新环境变量
     if api_key:
         # 将API密钥写入.env文件
@@ -118,7 +118,7 @@ def save_settings():
             f.write(f"# DeepSeek API密钥\nDEEPSEEK_API_KEY={api_key}")
         # 更新当前环境变量
         os.environ['DEEPSEEK_API_KEY'] = api_key
-    
+
     # 保存其他设置到settings.json，但不包括API密钥
     settings = {
         'model': request.form.get('model', DEFAULT_SETTINGS['model']),
@@ -140,7 +140,7 @@ def deep_paper(filename):
     if not os.path.exists(file_path):
         flash('文件不存在')
         return redirect(url_for('index'))
-    
+
     # 显示分析进度页面
     return render_template('analysis/analysis_progress.html', filename=filename)
 
@@ -158,40 +158,40 @@ def api_analysis_logs():
 def api_analyze(filename):
     # 清除之前的分析日志
     logger.clear_analysis_logs()
-    
+
     # 获取文件路径
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     if not os.path.exists(file_path):
         logger.error(f"文件不存在: {filename}")
         return jsonify({'error': '文件不存在'}), 404
-    
+
     # 获取原始文件名
     original_filename = filename.split('_', 1)[1] if '_' in filename else filename
     logger.info(f"开始分析文件: {original_filename}")
-    
+
     # 加载设置
     settings = load_settings()
     logger.info(f"使用模型: {settings['model']}, 语言: {settings['language']}, 网络搜索: {'启用' if settings.get('enable_web_search', False) else '禁用'}")
-    
+
     try:
         # 创建PDF分析器实例
         logger.info("初始化PDF分析器")
         analyzer = PDFAnalyzer(file_path)
-        
+
         # 步骤1：提取PDF内容
         logger.info("步骤1: 开始提取PDF文本内容")
         extracted_content = analyzer.extract_text()
         logger.info(f"提取完成，共获取 {len(extracted_content)} 字符的文本")
-        
+
         # 步骤2：提取图像和内容分块
         logger.info("步骤2: 开始分析内容结构和提取图像")
         content_blocks = analyzer.analyze_content_blocks()
         logger.info(f"内容分析完成，共识别 {len(content_blocks)} 个内容块")
-        
+
         # 步骤3：创建DeepSeek API实例
         logger.info(f"步骤3: 初始化DeepSeek API，使用模型 {settings['model']}")
         deepseek = DeepSeekAPI(model=settings['model'], api_key=settings.get('api_key', ''))
-        
+
         # 步骤4：准备解读提示词
         logger.info("步骤4: 准备解读提示词")
         prompt = settings.get('custom_prompt', '')
@@ -201,7 +201,7 @@ def api_analyze(filename):
             logger.info("使用默认提示词模板")
         else:
             logger.info("使用自定义提示词")
-        
+
         # 步骤5：处理网络搜索（如果启用）
         web_search_results = []
         if settings.get('enable_web_search', False):
@@ -216,11 +216,11 @@ def api_analyze(filename):
                 logger.info(f"搜索完成，获取 {len(web_search_results)} 条参考资料")
             else:
                 logger.warning("未能提取到论文标题，跳过网络搜索")
-        
+
         # 步骤6：生成分析结果
         logger.info("步骤6: 开始生成分析结果")
         analysis_sections = []
-        
+
         # 检查是否启用测试模式
         test_mode = settings.get('test_mode', False)
         if test_mode:
@@ -249,27 +249,27 @@ def api_analyze(filename):
                     'content': block.get('content', '')
                 })
                 continue
-                
+
             # 处理文本块
             block_content = block.get('content', '')
             if not block_content:
                 logger.info(f"跳过空内容块 {i+1}")
                 continue
-                
+
             # 构建完整提示词
             logger.info(f"处理文本块 {i+1}，标题: {block.get('title', f'段落 {i+1}')}")
             full_prompt = f"{prompt}\n\n文本内容：{block_content}"
-            
+
             # 如果有网络搜索结果，添加到提示词中
             if web_search_results and i == 0:  # 只在第一个块添加参考资料
                 logger.info("添加网络搜索参考资料到提示词")
                 full_prompt += "\n\n参考资料：\n" + "\n".join(web_search_results)
-            
+
             # 调用DeepSeek API进行解读
             logger.info(f"开始使用DeepSeek API解读文本块 {i+1}")
             analysis = deepseek.analyze_text(full_prompt, language=settings['language'])
             logger.info(f"文本块 {i+1} 解读完成，生成 {len(analysis)} 字符的分析结果")
-            
+
             # 添加到分析结果中
             analysis_sections.append({
                 'type': 'text',
@@ -277,10 +277,10 @@ def api_analyze(filename):
                 'original_content': block_content,
                 'analysis': analysis
             })
-        
+
         # 在分析完成后关闭文档
         analyzer.close()
-        
+
         # 将分析结果存储在session中，以便在分析页面显示
         session['analysis_result'] = {
             'filename': filename,
@@ -291,9 +291,9 @@ def api_analyze(filename):
             'web_search_results': web_search_results,
             'analysis_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
-        
-        return jsonify({'success': True, 'redirect': url_for('analysis_result', filename=filename)})
-        
+
+        return jsonify({'success': True, 'redirect': url_for('analysis_with_preview', filename=filename)})
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -301,13 +301,13 @@ def api_analyze(filename):
 def analysis_result(filename):
     # 从session中获取分析结果
     analysis_result = session.get('analysis_result', {})
-    
+
     # 如果没有分析结果或者文件名不匹配，重定向到PDF查看页面
     if not analysis_result or analysis_result.get('filename') != filename:
         flash('没有找到分析结果，请重新分析')
         return redirect(url_for('view_pdf', filename=filename))
-    
-    return render_template('analysis/analysis.html', 
+
+    return render_template('analysis/analysis.html',
                            filename=filename,
                            original_filename=analysis_result.get('original_filename'),
                            settings=analysis_result.get('settings'),
@@ -319,13 +319,13 @@ def analysis_result(filename):
 def analysis_with_preview(filename):
     # 从session中获取分析结果
     analysis_result = session.get('analysis_result', {})
-    
+
     # 如果没有分析结果或者文件名不匹配，重定向到PDF查看页面
     if not analysis_result or analysis_result.get('filename') != filename:
         flash('没有找到分析结果，请重新分析')
         return redirect(url_for('view_pdf', filename=filename))
-    
-    return render_template('analysis/analysis_with_preview.html', 
+
+    return render_template('analysis/analysis_with_preview.html',
                            filename=filename,
                            original_filename=analysis_result.get('original_filename'),
                            settings=analysis_result.get('settings'),
@@ -340,32 +340,32 @@ def process_analysis(filename):
     if not os.path.exists(file_path):
         flash('文件不存在')
         return redirect(url_for('index'))
-    
+
     # 获取原始文件名
     original_filename = filename.split('_', 1)[1] if '_' in filename else filename
-    
+
     # 加载设置
     settings = load_settings()
-    
+
     try:
         # 创建PDF分析器实例
         logger.info("初始化PDF分析器")
         analyzer = PDFAnalyzer(file_path)
-        
+
         # 步骤1：提取PDF内容
         logger.info("步骤1: 开始提取PDF文本内容")
         extracted_content = analyzer.extract_text()
         logger.info(f"提取完成，共获取 {len(extracted_content)} 字符的文本")
-        
+
         # 步骤2：提取图像和内容分块
         logger.info("步骤2: 开始分析内容结构和提取图像")
         content_blocks = analyzer.analyze_content_blocks()
         logger.info(f"内容分析完成，共识别 {len(content_blocks)} 个内容块")
-        
+
         # 步骤3：创建DeepSeek API实例
         logger.info(f"步骤3: 初始化DeepSeek API，使用模型 {settings['model']}")
         deepseek = DeepSeekAPI(model=settings['model'], api_key=settings.get('api_key', ''))
-        
+
         # 步骤4：准备解读提示词
         logger.info("步骤4: 准备解读提示词")
         prompt = settings.get('custom_prompt', '')
@@ -375,7 +375,7 @@ def process_analysis(filename):
             logger.info("使用默认提示词模板")
         else:
             logger.info("使用自定义提示词")
-        
+
         # 步骤5：处理网络搜索（如果启用）
         web_search_results = []
         if settings.get('enable_web_search', False):
@@ -390,11 +390,11 @@ def process_analysis(filename):
                 logger.info(f"搜索完成，获取 {len(web_search_results)} 条参考资料")
             else:
                 logger.warning("未能提取到论文标题，跳过网络搜索")
-        
+
         # 步骤6：生成分析结果
         logger.info("步骤6: 开始生成分析结果")
         analysis_sections = []
-        
+
         # 检查是否启用测试模式
         test_mode = settings.get('test_mode', False)
         if test_mode:
@@ -423,27 +423,27 @@ def process_analysis(filename):
                     'content': block.get('content', '')
                 })
                 continue
-                
+
             # 处理文本块
             block_content = block.get('content', '')
             if not block_content:
                 logger.info(f"跳过空内容块 {i+1}")
                 continue
-                
+
             # 构建完整提示词
             logger.info(f"处理文本块 {i+1}，标题: {block.get('title', f'段落 {i+1}')}")
             full_prompt = f"{prompt}\n\n文本内容：{block_content}"
-            
+
             # 如果有网络搜索结果，添加到提示词中
             if web_search_results and i == 0:  # 只在第一个块添加参考资料
                 logger.info("添加网络搜索参考资料到提示词")
                 full_prompt += "\n\n参考资料：\n" + "\n".join(web_search_results)
-            
+
             # 调用DeepSeek API进行解读
             logger.info(f"开始使用DeepSeek API解读文本块 {i+1}")
             analysis = deepseek.analyze_text(full_prompt, language=settings['language'])
             logger.info(f"文本块 {i+1} 解读完成，生成 {len(analysis)} 字符的分析结果")
-            
+
             # 添加到分析结果中
             analysis_sections.append({
                 'type': 'text',
@@ -451,10 +451,10 @@ def process_analysis(filename):
                 'original_content': block_content,
                 'analysis': analysis
             })
-        
+
         # 在分析完成后关闭文档
         analyzer.close()
-        
+
         # 将分析结果存储在session中，以便在分析页面显示
         session['analysis_result'] = {
             'filename': filename,
@@ -465,10 +465,10 @@ def process_analysis(filename):
             'web_search_results': web_search_results,
             'analysis_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
-        
+
         # 返回JSON响应，包含重定向URL，供前端JavaScript使用
         return jsonify({'success': True, 'redirect': url_for('analysis_with_preview', filename=filename)})
-        
+
     except Exception as e:
         flash(f'分析过程中出错: {str(e)}')
         return redirect(url_for('view_pdf', filename=filename))

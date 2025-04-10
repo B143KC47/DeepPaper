@@ -7,5 +7,6 @@ public/*
 !public/.gitkeep
 
 __pycache__/*
+flask_session/*
 
 .env
